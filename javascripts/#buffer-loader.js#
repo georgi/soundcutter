@@ -1,0 +1,8 @@
+/**
+ * Class BufferLoader
+ */
+
+var BufferLoader = new Class({
+    
+    }
+});
