@@ -3,32 +3,38 @@ var Arrangement = new Class({
 
   initialize: function(options) {
     Widget.prototype.initialize.call(this, options);
-
-    this.tracks = [];
   },
 
-  addTrack: function(name) {
-    var track = this.add({
+  addTrack: function(options) {
+    return this.add(Object.merge({
       type: Track,
-      name: name
-    });
-
-    this.tracks.push(track);
-
-    return track;
+      on: {
+        clipmove: this.onClipMove.bind(this)
+      }
+    }, options));
   },
 
-  getTrack: function(name) {
-    for (var i = 0; i < this.tracks.length; i++) {
-      if (this.tracks[i].name == name) {
-        return this.tracks[i];
+  onClipMove: function(track, clip, event) {
+    if (!track.isInside(event.pageX, event.pageY)) {
+      var newTrack = this.findTrackFor(event.pageX, event.pageY);
+      if (newTrack) {
+        track.removeClip(clip);
+        newTrack.addClip(clip);
       }
     }
-    return null;
+  },
+
+  findTrackFor: function(pageX, pageY) {
+    for (var i = 0; i < this.children.length; i++) {
+      var track = this.children[i];
+      if (track.isInside(pageX, pageY)) {
+        return track;
+      }
+    }
   },
 
   doLayout: function() {
-    if (this.tracks.length == 0) {
+    if (this.children.length == 0) {
       return;
     }
 
@@ -38,10 +44,10 @@ var Arrangement = new Class({
     this.height = this._parent.height;
 
     var y = 0;
-    var h = this.height / this.tracks.length;
+    var h = this.height / this.children.length;
 
     h = 80;
-    this.tracks.each(function(track) {
+    this.children.each(function(track) {
       track.extent(0, y, this.width, h);
       y += h;
     }, this);
@@ -56,7 +62,7 @@ var Arrangement = new Class({
 
   updateTime: function(time) {
     this.time = time;
-    this.tracks.each(function(track) {
+    this.children.each(function(track) {
       track.pixelsPerSecond = this.pixelsPerSecond;
       track.updateTime(time);
     }, this);

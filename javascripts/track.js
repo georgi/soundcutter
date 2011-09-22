@@ -48,36 +48,40 @@ var Track = new Class({
       track: this
     });
 
-    this.clipsView = this.add({
+    this.clips = this.add({
       type: TrackClipsView,
       track: this
     });
-
-    this.clips = [];
   },
 
   doLayout: function() {
     this.mixer.extent(0, 0, 100, this.height);
-    this.clipsView.extent(100, 0, this.width - 100, this.height);
+    this.clips.extent(100, 0, this.width - 100, this.height);
 
     this.layoutChildren();
   },
 
   updateTime: function(time) {
-    this.clips.each(function(clip) {
+    this.clips.children.each(function(clip) {
       clip.updateTime(time);
     }, this);
   },
 
-  addClip: function(name) {
-    var clip = this.clipsView.add({
-      type: Clip,
-      name: name
-    });
-
-    this.clips.push(clip);
-
-    return clip;
+  onClipMove: function(clip, event) {
+    this.fireEvent('clipmove', [this, clip, event]);
   },
+
+  addClip: function(clip) {
+    return this.clips.add(Object.merge({
+        type: Clip,
+        on: {
+          move: this.onClipMove.bind(this)
+        }
+      }, clip));
+  },
+
+  removeClip: function(clip) {
+    this.clips.remove(clip);
+  }
 
 });

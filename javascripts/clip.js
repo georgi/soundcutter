@@ -4,7 +4,7 @@ var Clip = new Class({
   initialize: function(options) {
     Widget.prototype.initialize.call(this, options);
 
-    this.start = 0;
+    this.startTime = 0;
     this.sampleRate = 44100;
     this.sampleLength = 0;
     this.sampleStart = 0;
@@ -18,21 +18,21 @@ var Clip = new Class({
   },
 
   updateTime: function(time) {
-    return;
     if (this.wave) {
-      if (!this.playing && time + 50 >= this.start) {
-        this.source.noteOn(this.context.currentTime + this.start - time);
+      if (!this.playing && time + 50 >= this.startTime) {
+        console.log(time);
+        this.source.noteOn(this.context.currentTime + this.startTime - time);
         this.playing = true;
       }
-      if (this.playing && time + 50 >= this.start + this.length()) {
-        this.source.noteOff(this.context.currentTime + this.start + this.length() - time);
+      if (this.playing && time + 50 >= this.startTime + this.length()) {
+        this.source.noteOff(this.context.currentTime + this.startTime + this.length() - time);
         this.playing = false;
       }
     }
   },
 
   doLayout: function() {
-    this.x = this.start * this.pixelsPerSecond;
+    this.x = this.startTime * this.pixelsPerSecond;
     this.width = this.length() * this.pixelsPerSecond;
   },
 
@@ -74,7 +74,7 @@ var Clip = new Class({
 
   onTouchDown: function(event) {
     this.drag = {
-      start: this.start,
+      startTime: this.startTime,
       sampleStart: this.sampleStart,
       sampleLength: this.sampleLength,
       pageX: event.pageX
@@ -98,21 +98,27 @@ var Clip = new Class({
 
     switch (this.drag.type) {
     case 'move':
-      this.start = this.drag.start + deltaX / this.pixelsPerSecond;
+      this.startTime = this.drag.startTime + deltaX / this.pixelsPerSecond;
       break;
+
     case 'start':
-      this.start = this.drag.start + deltaX / this.pixelsPerSecond;
+      this.startTime = this.drag.startTime + deltaX / this.pixelsPerSecond;
       this.sampleStart = this.drag.sampleStart + (deltaX / this.pixelsPerSecond) * this.sampleRate;
       this.sampleLength = this.drag.sampleLength - (deltaX / this.pixelsPerSecond) * this.sampleRate;
       break;
+
     case 'end':
       this.sampleLength = this.drag.sampleLength + (deltaX / this.pixelsPerSecond) * this.sampleRate;
       break;
     }
 
-    this.start = Math.max(0, this.start);
+    this.startTime = Math.max(0, this.startTime);
     this.sampleStart = Math.max(0, this.sampleStart);
     this.sampleLength = Math.min(this.sampleLength, this.wave.length);
+
+    if (this.drag.type == 'move') {
+      this.fireEvent('move', [this, event]);
+    }
 
     return true;
   }

@@ -220,22 +220,14 @@ var Widget = new Class({
     this.controller.send.apply(this.controller, arguments);
   },
 
-  add: function(options) {
-    var type = options.type || Widget;
+  add: function(child) {
+    child.context = this.context;
+    child._parent = this;
 
-    if (!options.controller) {
-      options.controller = this.controller;
+    if (!child.$constructor) {
+      var type = child.type || Widget;
+      child = new type.prototype.$constructor(child);
     }
-
-    if (!options.context) {
-      options.context = this.context;
-    }
-
-    if (!options._parent) {
-      options._parent = this;
-    }
-
-    var child = new type.prototype.$constructor(options);
 
     this.children.push(child);
 
@@ -300,6 +292,13 @@ var Widget = new Class({
       this.height = h;
       return this;
     }
+  },
+
+  isInside: function(pageX, pageY) {
+    var x = pageX - this.pageX();
+    var y = pageY - this.pageY();
+
+    return x >= 0 && x <= this.width && y >= 0 && y <= this.height;
   },
 
   root: function() {

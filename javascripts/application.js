@@ -3,6 +3,8 @@ var Application = new Class({
   initialize: function() {
     this.context = new webkitAudioContext();
 
+    document.addEventListener('keydown', this.onKeyDown.bind(this));
+
     this.root = new Widget({
       context: this.context
     });
@@ -13,29 +15,42 @@ var Application = new Class({
       pixelsPerSecond: 100
     });
 
-    var clip1 = this.arrangement.addTrack('Track1').addClip('loop1');
-    var clip2 = this.arrangement.addTrack('Track2').addClip('loop2');
-    var clip3 = this.arrangement.addTrack('Track3').addClip('loop2');
-    var clip4 = this.arrangement.addTrack('Track4').addClip('loop2');
+    var track1 = this.arrangement.addTrack({ name: 'Track1' });
+    var track2 = this.arrangement.addTrack({ name: 'Track2' });
+    var track3 = this.arrangement.addTrack({ name: 'Track3' });
+    var track4 = this.arrangement.addTrack({ name: 'Track4' });
+
+    var clip1 = track1.addClip({ name: 'clip1' });
+    var clip2 = track2.addClip({ name: 'clip2' });
 
     this.loadBuffer("loop1.wav", function(buffer) {
       clip1.setBuffer(buffer);
       clip2.setBuffer(buffer);
-      clip3.setBuffer(buffer);
-      clip4.setBuffer(buffer);
       clip1.sampleLength = 100000;
       clip2.sampleLength = 100000;
-      clip3.sampleLength = 100000;
-      clip4.sampleLength = 100000;
     });
+
+    this.running = false;
 
     setInterval(function() {
       this.updateTime();
     }.bind(this), 50);
   },
 
+  onKeyDown: function(event) {
+    if (event.keyCode == 32) {
+      this.running = !this.running;
+
+      if (this.running) {
+        this.startTime = this.context.currentTime;
+      }
+    }
+  },
+
   updateTime: function() {
-    this.arrangement.updateTime(this.context.currentTime);
+    if (this.running) {
+      this.arrangement.updateTime(this.context.currentTime - this.startTime);
+    }
   },
 
   loadBuffer: function(url, callback) {

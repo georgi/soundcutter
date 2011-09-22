@@ -62,15 +62,8 @@ var TouchTracker = new Class({
     };
   },
 
-  eventInside: function(widget, event) {
-    var x = event.pageX - widget.pageX();
-    var y = event.pageY - widget.pageY();
-
-    return x >= 0 && x <= widget.width && y >= 0 && y <= widget.height;
-  },
-
   findTarget: function(widget, event) {
-    if (widget.visible && this.eventInside(widget, event)) {
+    if (widget.visible && widget.isInside(event.pageX, event.pageY)) {
       for (var i = widget.children.length - 1; i >= 0; i--) {
         var target = this.findTarget(widget.children[i], event);
         if (target) {
