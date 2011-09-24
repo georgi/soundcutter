@@ -1,26 +1,32 @@
-var Clip = new Class({
-  Extends: Widget,
+var Clip = function(options) {
+  $.set(this, options);
 
-  initialize: function(options) {
-    Widget.prototype.initialize.call(this, options);
+  this.startTime = 0;
+  this.sampleRate = 44100;
+  this.sampleLength = 0;
+  this.sampleStart = 0;
+  this.playing = false;
+  this.source = this.context.createBufferSource();
+  this.source.connect(this.context.destination);
 
-    this.startTime = 0;
-    this.sampleRate = 44100;
-    this.sampleLength = 0;
-    this.sampleStart = 0;
-    this.playing = false;
-    this.source = this.context.createBufferSource();
-    this.source.connect(this.context.destination);
-  },
+  this.element = $('<div class="clip"><canvas></canvas></div>');
+  this.canvas = this.element.find('canvas');
+
+  this.element.width(200);
+  this.canvas.width(200);
+
+  this.element.mousedown(this.onMouseDown.bind(this));
+};
+
+Clip.prototype = {
 
   length: function() {
     return this.sampleLength / this.sampleRate;
   },
 
-  updateTime: function(time) {
+  update: function(time) {
     if (this.wave) {
       if (!this.playing && time + 50 >= this.startTime) {
-        console.log(time);
         this.source.noteOn(this.context.currentTime + this.startTime - time);
         this.playing = true;
       }
@@ -40,36 +46,32 @@ var Clip = new Class({
     this.source.buffer = this.context.createBuffer(buffer, false);
     this.wave = new Int16Array(buffer);
     this.sampleLength = this.wave.length;
+    this.draw();
   },
 
-  drawCanvas: function(context) {
-    context.fillStyle = '#eee';
-    context.fillRect(0, 0, this.width, this.height);
+  draw: function() {
+    var context = this.canvas.get(0).getContext("2d");
+    var wave = this.wave;
+    var width = this.element.width();
+    var height = this.element.height();
+    var yscale = height / 65536 * 2;
+    var ymid = height / 2;
+    var xstep = parseInt(this.sampleRate / this.pixelsPerSecond);
+    var offset = this.sampleStart;
 
-    context.fillStyle = '#ccc';
-    context.fillRect(0, 0, 20, this.height);
-    context.fillRect(this.width - 20, 0, 20, this.height);
+    context.clearRect(0, 0, width, height);
 
-    if (this.wave) {
-      var yscale = this.height / 65536 * 2;
-      var ymid = this.height / 2;
-      var xstep = parseInt(this.sampleRate / this.pixelsPerSecond);
-      var offset = this.sampleStart;
+    context.fillStyle = "#666";
+    context.beginPath();
+    context.moveTo(0, ymid);
 
-      context.fillStyle = "#666";
-      context.beginPath();
-      context.moveTo(0, ymid);
-
-      for (var i = 0; i < this.width; i++) {
-        context.lineTo(i, ymid + this.wave[offset + i * xstep] * yscale);
-      }
-
-      context.stroke();
+    for (var i = 0; i < width; i++) {
+      context.lineTo(i, ymid + wave[offset + i * xstep] * yscale);
     }
 
-    context.fillStyle = '#000';
-    context.font = 'Arial';
-    context.fillText(this.name, 10, 10);
+    context.stroke();
+
+    context.strokeRect(0, 0, width, height);
   },
 
   onTouchDown: function(event) {
@@ -123,4 +125,4 @@ var Clip = new Class({
     return true;
   }
 
-});
+};

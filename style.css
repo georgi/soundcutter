@@ -1,0 +1,13 @@
+.track {
+         height: 100px;
+         border: 1px solid #ccc;
+}
+
+.clip {
+        height: 100px;
+        border: 1px solid #eee;
+        }
+
+.clip canvas {
+       height: 100px;
+}

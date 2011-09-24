@@ -1,27 +1,20 @@
-var Application = new Class({
+var Application = {
 
   initialize: function() {
+    this.clips = [];
     this.context = new webkitAudioContext();
+    this.pixelsPerSecond = 100;
 
-    document.addEventListener('keydown', this.onKeyDown.bind(this));
+    $(document).keydown(this.onKeyDown.bind(this));
 
-    this.root = new Widget({
-      context: this.context
-    });
+    var clip1 = new Clip({ context: this.context, name: 'clip1', pixelsPerSecond: this.pixelsPerSecond });
+    var clip2 = new Clip({ context: this.context, name: 'clip2', pixelsPerSecond: this.pixelsPerSecond });
 
-    this.arrangement = this.root.add({
-      type: Arrangement,
-      layout: 'fit',
-      pixelsPerSecond: 100
-    });
+    this.clips.push(clip1);
+    this.clips.push(clip2);
 
-    var track1 = this.arrangement.addTrack({ name: 'Track1' });
-    var track2 = this.arrangement.addTrack({ name: 'Track2' });
-    var track3 = this.arrangement.addTrack({ name: 'Track3' });
-    var track4 = this.arrangement.addTrack({ name: 'Track4' });
-
-    var clip1 = track1.addClip({ name: 'clip1' });
-    var clip2 = track2.addClip({ name: 'clip2' });
+    $('#track-1').append(clip1.element);
+    $('#track-2').append(clip2.element);
 
     this.loadBuffer("loop1.wav", function(buffer) {
       clip1.setBuffer(buffer);
@@ -49,7 +42,9 @@ var Application = new Class({
 
   updateTime: function() {
     if (this.running) {
-      this.arrangement.updateTime(this.context.currentTime - this.startTime);
+      for (var i = 0; i < this.clips.length; i++) {
+        this.clips[i].update(this.context.currentTime - this.startTime);              
+      }
     }
   },
 
@@ -65,4 +60,4 @@ var Application = new Class({
     callback(request.response);
   }
 
-});
+};
