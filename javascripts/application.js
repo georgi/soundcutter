@@ -1,58 +1,123 @@
 var Application = {
 
   initialize: function() {
-    this.clips = [];
+    this.time = 0;
+    this.interval = 0.050;
+    this.running = false;
+    this.tracks = [];
     this.context = new webkitAudioContext();
     this.pixelsPerSecond = 100;
+    this.playPosition = $('#play-position');
 
-    $(document).keydown(this.onKeyDown.bind(this));
+    $(document).keydown(_.bind(this.onKeyDown, this));
 
-    var clip1 = new Clip({ context: this.context, name: 'clip1', pixelsPerSecond: this.pixelsPerSecond });
-    var clip2 = new Clip({ context: this.context, name: 'clip2', pixelsPerSecond: this.pixelsPerSecond });
+    this.createTrack({ name: 'track1' });
+    this.createTrack({ name: 'track2' });
 
-    this.clips.push(clip1);
-    this.clips.push(clip2);
+    $('#samples a').live('click', _.bind(this.onClickSample, this));
 
-    $('#track-1').append(clip1.element);
-    $('#track-2').append(clip2.element);
+    setInterval(_.bind(this.updateAudio, this), this.interval * 1000);
+  },
 
-    this.loadBuffer("loop1.wav", function(buffer) {
-      clip1.setBuffer(buffer);
-      clip2.setBuffer(buffer);
-      clip1.sampleLength = 100000;
-      clip2.sampleLength = 100000;
-    });
+  onClickSample: function(event) {
+    event.preventDefault();
 
-    this.running = false;
+    this.loadBuffer(event.target.href, _.bind(function(buffer) {
+      this.tracks[0].createClip({ buffer: buffer });      
+    }, this));
+  },
 
-    setInterval(function() {
-      this.updateTime();
-    }.bind(this), 50);
+  createTrack: function(options) {
+    var track = new Track(_.extend({
+      context: this.context,
+      pixelsPerSecond: this.pixelsPerSecond
+    }, options));
+
+    this.tracks.push(track);
+
+    return track;
   },
 
   onKeyDown: function(event) {
-    if (event.keyCode == 32) {
-      this.running = !this.running;
-
-      if (this.running) {
-        this.startTime = this.context.currentTime;
+    switch (event.keyCode) {
+    case 38:
+      if (event.ctrlKey) {
+        this.pixelsPerSecond /= 2;
+        this.updateGraphics();
       }
+      break;
+
+    case 40:
+      if (event.ctrlKey) {
+        this.pixelsPerSecond *= 2;
+        this.updateGraphics();
+      }
+      break;
+
+    case 37:
+      event.preventDefault();
+      if (this.time > 0) {
+        this.time -= 0.5;
+        this.startTime -= 0.5;
+      }
+      break;
+
+    case 39:
+      event.preventDefault();
+      this.time += 0.5;
+        this.startTime += 0.5;
+      break;
+
+    case 32:
+      event.preventDefault();
+      if (this.running) {
+        this.running = false;
+        this.stopClips();
+      }
+      else {
+        this.startTime = this.context.currentTime - this.time;
+        this.running = true;
+      }
+      break;
     }
   },
 
-  updateTime: function() {
+  eachClip: function(callback, scope) {
+    _.each(this.tracks, function(track) {
+      _.each(track.clips, callback, scope);
+    });
+  },
+
+  updateAudio: function() {
     if (this.running) {
-      for (var i = 0; i < this.clips.length; i++) {
-        this.clips[i].update(this.context.currentTime - this.startTime);              
-      }
+      this.time = this.context.currentTime - this.startTime;
+
+      this.eachClip(function(clip) {
+        clip.updateAudio(this);
+      }, this);
     }
+
+    this.playPosition.css('left', this.time * this.pixelsPerSecond);
+  },
+
+  updateGraphics: function() {
+    this.eachClip(function(clip) {
+      clip.pixelsPerSecond = this.pixelsPerSecond;
+      clip.updateGraphics();
+    }, this);
+  },
+
+  stopClips: function() {
+    this.eachClip(function(clip) {
+      clip.stop();
+    }, this);
   },
 
   loadBuffer: function(url, callback) {
     var request = new XMLHttpRequest();
     request.open("GET", url, true);
     request.responseType = "arraybuffer";
-    request.onload = this.onLoadBuffer.bind(this, request, callback);
+    request.onload = _.bind(this.onLoadBuffer, this, request, callback);
     request.send();
   },
 

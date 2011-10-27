@@ -1,23 +1,27 @@
 <html>
   <head>
     <script type="text/javascript" src="javascripts/jquery.js"></script>
-    <script type="text/javascript" src="javascripts/base.js"></script>
+    <script type="text/javascript" src="javascripts/underscore.js"></script>
+    <script type="text/javascript" src="javascripts/track.js"></script>
     <script type="text/javascript" src="javascripts/clip.js"></script>
     <script type="text/javascript" src="javascripts/application.js"></script>
     <link rel="stylesheet" href="style.css" type="text/css" media="screen" />
   </head>
   <body onload="Application.initialize()">
     <div id="application">
+      <div id="sidebar">
+        <ul id="samples">
+          <li><a href="/amen_brother.wav">amen_brother.wav</a></li>
+          <li><a href="/apache.wav">apache.wav</a></li>
+          <li><a href="/big_beat.wav">big_beat.wav</a></li>
+        </ul>
+      </div>
       <div id="toolbar">
       </div>
       <div id="arrangement">
-        <div id="track-1" class="track">
+        <div id="play-position">
         </div>
-        <div id="track-2" class="track">
-        </div>
-        <div id="track-3" class="track">
-        </div>
-      </div>
+     </div>
     </div>
   </body>
 </html>

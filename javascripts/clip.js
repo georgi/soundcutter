@@ -1,65 +1,118 @@
 var Clip = function(options) {
-  $.set(this, options);
+  _.extend(this, options);
 
   this.startTime = 0;
   this.sampleRate = 44100;
-  this.sampleLength = 0;
-  this.sampleStart = 0;
+  this.duration = 0;
+  this.offset = 0;
   this.playing = false;
-  this.source = this.context.createBufferSource();
-  this.source.connect(this.context.destination);
 
-  this.element = $('<div class="clip"><div class="left-handle"></div><div class="canvas-clip"><canvas></canvas></div><div class="right-handle"></div></div>');
-  this.canvas = this.element.find('canvas');
-  this.canvasClip = this.element.find('.canvas-clip');
-  this.leftHandle = this.element.find('.left-handle');
-  this.rightHandle = this.element.find('.right-handle');
+  this.element = $('<div class="clip"></div>');
+  this.canvas = $('<canvas class="canvas"></canvas>');
+  this.leftHandle = $('<div class="left-handle"></div>');
+  this.rightHandle = $('<div class="right-handle"></div>');
+
+  this.element.append(this.leftHandle);
+  this.element.append(this.canvas);
+  this.element.append(this.rightHandle);
 
   this.canvas.attr('height', 100);
 
-  this.canvas.mousedown(this.onMouseDown.bind(this, 'move'));
-  this.leftHandle.mousedown(this.onMouseDown.bind(this, 'left'));
-  this.rightHandle.mousedown(this.onMouseDown.bind(this, 'right'));
+  this.element.mousedown(_.bind(this.onMouseDown, this));
 
-  this._onDrag = this.onDrag.bind(this);
-  this._onDragEnd = this.onDragEnd.bind(this);
+  this._onDrag = _.bind(this.onDrag, this);
+  this._onDragEnd = _.bind(this.onDragEnd, this);
+
+  if (this.buffer) {
+    setTimeout(_.bind(this.setBuffer, this, this.buffer), 100);
+  }
 };
 
 Clip.prototype = {
 
-  length: function() {
-    return this.sampleLength / this.sampleRate;
+  setSampleRange: function(start, length) {
+    this.offset = start;
+    this.duration = length;
+    this.updateElement();
   },
 
-  update: function(time) {
+  updateAudio: function(context) {
     if (this.wave) {
-      if (!this.playing && time + 50 >= this.startTime) {
-        this.source.noteOn(this.context.currentTime + this.startTime - time);
+      if (!this.playing && 
+          context.time + context.interval >= this.startTime && 
+          context.time + context.interval < this.startTime + this.duration) {
+
+        this.source = this.context.createBufferSource();
+        this.source.buffer = this.buffer;
+        this.source.connect(this.destination);
+
+        // this.source.noteOn(context.startTime + this.startTime);
+
+        var offset = this.offset;
+        var duration = this.duration;
+
+        if (context.time > this.startTime) {
+          offset += context.time - this.startTime;
+          duration -= context.time - this.startTime;
+        }
+
+        console.log(offset, duration);
+
+
+        this.source.noteGrainOn(context.startTime + this.startTime, offset, duration - 0.1);
+        // this.source.noteGrainOn(context.startTime + this.startTime, this.offset, this.duration);
         this.playing = true;
       }
-      if (this.playing && time + 50 >= this.startTime + this.length()) {
-        this.source.noteOff(this.context.currentTime + this.startTime + this.length() - time);
+
+      if (this.playing && context.time + context.interval >= this.startTime + this.duration) {
+        this.source.noteOff(context.startTime + this.startTime + this.duration);
         this.playing = false;
+        this.source = null;
       }
     }
   },
 
+  updateElement: function() {
+    this.element.css('left', this.startTime * this.pixelsPerSecond);
+    this.element.width(this.duration * this.pixelsPerSecond);
+    this.canvas.css('left', -this.offset * this.pixelsPerSecond);
+  },
+
+  updateGraphics: function() {
+    this.draw();
+    this.updateElement();
+  },
+
+  // play: function(context) {
+  //   if (context.time > this.startTime && context.time < this.startTime + this.duration) {
+  //     var offset = context.time - this.startTime;
+  //     this.source.noteGrainOn(context.startTime + this.startTime, this.offset + offset, this.duration - offset);
+  //     this.playing = true;
+  //   }
+  // },
+
+  stop: function() {
+    this.source.noteOff(0);
+    this.source = null;
+    this.playing = false;
+  },
+
   setBuffer: function(buffer) {
-    this.source.buffer = this.context.createBuffer(buffer, false);
+    this.buffer = this.context.createBuffer(buffer, false);
     this.wave = new Int16Array(buffer);
-    this.sampleLength = this.wave.length;
+    this.duration = this.wave.length / this.sampleRate / 2;
     this.updateElement();
     this.draw();
   },
 
   draw: function() {
-    var context = this.canvas.get(0).getContext("2d");
-    var wave = this.wave;
-    var width = (this.wave.length / this.sampleRate) * this.pixelsPerSecond;
-    var height = 100;
-    var yscale = height / 65536 * 2;
-    var ymid = height / 2;
-    var xstep = parseInt(this.sampleRate / this.pixelsPerSecond);d
+    var context = this.canvas.get(0).getContext("2d"),
+        wave = this.wave,
+        width = (this.wave.length / this.sampleRate) * this.pixelsPerSecond,
+        height = 100,
+        yscale = height / 65536 * 2,
+        ymid = height / 2,
+        xstep = parseInt(this.sampleRate * 2 / this.pixelsPerSecond);
 
     this.canvas.attr('height', height);
     this.canvas.attr('width', width);
@@ -77,12 +130,12 @@ Clip.prototype = {
     context.stroke();
   },
 
-  onMouseDown: function(type, event) {
+  onMouseDown: function(event) {
     this.drag = {
-      type: type,
+      target: event.target.className,
       startTime: this.startTime,
-      sampleStart: this.sampleStart,
-      sampleLength: this.sampleLength,
+      offset: this.offset,
+      duration: this.duration,
       pageX: event.pageX
     };
 
@@ -91,27 +144,25 @@ Clip.prototype = {
   },
 
   onDrag: function(event) {
-    var deltaX = event.pageX - this.drag.pageX;
+    var delta = (event.pageX - this.drag.pageX) / this.pixelsPerSecond;
 
-    switch (this.drag.type) {
-    case 'move':
-      this.startTime = this.drag.startTime + deltaX / this.pixelsPerSecond;
-      this.checkBounds();
+    switch (this.drag.target) {
+    case 'canvas':
+      this.startTime = this.drag.startTime + delta;
       break;
 
-    case 'left':
-      this.startTime = this.drag.startTime + deltaX / this.pixelsPerSecond;
-      this.sampleStart = this.drag.sampleStart + (deltaX / this.pixelsPerSecond) * this.sampleRate;
-      this.sampleLength = this.drag.sampleLength - (deltaX / this.pixelsPerSecond) * this.sampleRate;
-      this.checkBounds();
+    case 'left-handle':
+      this.startTime = this.drag.startTime + delta;
+      this.offset = this.drag.offset + delta;
+      this.duration = this.drag.duration - delta;
       break;
 
-    case 'right':
-      this.sampleLength = this.drag.sampleLength + (deltaX / this.pixelsPerSecond) * this.sampleRate;
-      this.checkBounds();
+    case 'right-handle':
+      this.duration = this.drag.duration + delta;
       break;
     }
 
+    this.checkBounds();
     this.updateElement();
     this.element.trigger('drag', event);
   },
@@ -121,16 +172,10 @@ Clip.prototype = {
     $(document).unbind('mouseup', this._onDragEnd);
   },
 
-  updateElement: function() {
-    this.element.css('left', this.startTime * this.pixelsPerSecond);
-    this.canvasClip.width((this.sampleLength / this.sampleRate) * this.pixelsPerSecond);
-    this.element.width(this.leftHandle.width() + this.canvasClip.width() + this.rightHandle.width());
-  },
-
   checkBounds: function() {
     this.startTime = Math.max(0, this.startTime);
-    this.sampleStart = Math.max(0, this.sampleStart);
-    this.sampleLength = Math.min(this.sampleLength, this.wave.length);
+    this.offset = Math.max(0, this.offset);
+    this.duration = Math.min(this.duration, this.wave.length / this.sampleRate / 2);
   }
 
 };

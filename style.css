@@ -1,36 +1,59 @@
+
+#play-position
+{
+    position: absolute;
+    width: 1px;
+    height: 200px;
+    background: #ccc;
+    z-index: 10;
+}
+
+#arrangement
+{
+    position: relative;
+    width: 100%;
+    overflow: scroll;
+}
+
 .track
 {
-  border: 1px solid #ccc;
-  position: relative;
-  height: 100px;
-  }
+    border: 1px solid #ccc;
+    position: relative;
+    height: 100px;
+}
 
 .clip
 {
-  border: 1px solid #eee;
-  position: absolute;
-  }
+    border: 1px solid #eee;
+    position: absolute;
+    overflow: hidden;
+}
 
-
-.clip .canvas-clip
+.clip canvas
 {
-  height: 100px;
-  float: left;
-  overflow: hidden;
+    position: relative;
 }
 
 .clip .left-handle
 {
-  float: left;
-  width: 20px;
-  height: 100px;
-  background: #ccc;
-  }
+    top: 0px;
+    left: 0px;
+    width: 20px;
+    height: 100px;
+    background: #ccc;
+    position: absolute;
+    opacity: 0.5;
+    z-index: 10;
+}
 
 .clip .right-handle
 {
-  float: right;
-  width: 20px;
-  height: 100px;
-  background: #ccc;
-  }
+    top: 0px;
+    right: 0px;
+    width: 20px;
+    height: 100px;
+    background: #ccc;
+    position: absolute;
+    opacity: 0.5;
+    z-index: 10;
+}
