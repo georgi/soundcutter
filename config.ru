@@ -1,2 +1,0 @@
-
-run Rack::File.new('.')

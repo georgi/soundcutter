@@ -1,0 +1,68 @@
+#!/usr/bin/env node
+
+// extend require path
+require.paths.unshift(__dirname + '/..');
+
+// imports
+var fs        = require('fs');
+var connect   = require('connect');
+var paperboy  = require('paperboy');
+
+var proxy     = require('mountable-proxy');
+
+// configuration
+var conf     = require('config/base');
+var routes   = conf.routes;
+var fileConf = conf.file;
+var httpConf = conf.http;
+var package  = JSON.parse(fs.readFileSync('package.json'));
+
+var httpServer    = connect.createServer();
+var apiProxy      = proxy.createProxy(conf.apiProxy);
+
+// bindings
+httpServer
+  .use(connect.logger({
+    stream: process.stdout
+  }))
+  .use(connect.router(serveHTTP))
+  .listen(httpConf.port, httpConf.host, function() {
+    console.log('HTTP Server running at http://%s:%d', httpConf.host, httpConf.port);
+  });
+
+function serveHTTP(app) {
+  app.all(routes.api, function(request, response, next) {
+    apiProxy.http(request, response);
+  });
+
+  app.get(routes.wildcard, function(request, response, next) {
+    if (!routes.static.test(request.url)) {
+      request.url = httpConf.defaultFile;
+    }
+
+    deliverStatic(request, response);
+  });
+}
+
+function deliverStatic(request, response) {
+  paperboy.deliver(fileConf.staticDir, request, response)
+    .addHeader('Expires', parseInt(fileConf.expires, 10) * 1000)
+    .otherwise(function(error) {
+      var body = 'Error 404: File not found';
+
+      response.writeHead(404, {
+        'content-length': body.length,
+        'content-type': 'text/plain'
+      });
+      response.end(body);
+    })
+    .error(function(statusCode, error) {
+      var body = 'Error ' + statusCode;
+
+      response.writeHead(statusCode, {
+        'content-length': body.length,
+        'content-type': 'text/plain'
+      });
+      response.end(body);
+    });
+}

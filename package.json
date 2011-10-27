@@ -1,0 +1,26 @@
+{
+    "author": "Matthias Georgi",
+    "name": "ausdionerd",
+    "description": "digital audio workstation",
+    "version": "0.0.0",
+    "homepage": "http://audionerd.info",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/georgi/audionerd.git"
+    },
+    "scripts": {
+        "test": "vows --spec"
+    },
+    "engines": {
+        "node": "~v0.4.11"
+    },
+    "dependencies": {
+        "config": "=0.2.9",
+        "connect": "=1.7.0",
+        "jslint": "=0.1.0",
+        "mountable-proxy": "=0.0.3",
+        "paperboy": "https://github.com/felixge/node-paperboy/tarball/master",
+        "underscore": "=1.1.7"
+    },
+    "devDependencies": {}
+}
