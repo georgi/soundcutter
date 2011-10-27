@@ -6,12 +6,13 @@ var Clip = function(options) {
   this.duration = 0;
   this.offset = 0;
   this.playing = false;
+  this.selected = false;
 
   this.element = $('<div class="clip"></div>');
   this.canvas = $('<canvas class="canvas"></canvas>');
   this.leftHandle = $('<div class="left-handle"></div>');
   this.rightHandle = $('<div class="right-handle"></div>');
-
+  
   this.element.append(this.leftHandle);
   this.element.append(this.canvas);
   this.element.append(this.rightHandle);
@@ -19,6 +20,7 @@ var Clip = function(options) {
   this.canvas.attr('height', 100);
 
   this.element.mousedown(_.bind(this.onMouseDown, this));
+  this.element.click(_.bind(this.onMouseClick, this));
 
   this._onDrag = _.bind(this.onDrag, this);
   this._onDragEnd = _.bind(this.onDragEnd, this);
@@ -126,10 +128,14 @@ Clip.prototype = {
     for (var i = 0; i < width; i++) {
       context.lineTo(i, ymid + wave[i * xstep] * yscale);
     }
-
+    
     context.stroke();
   },
-
+  
+  onMouseClick: function(event) {
+    this.selected = this.selected ? false : true;    
+  },
+  
   onMouseDown: function(event) {
     this.drag = {
       target: event.target.className,
@@ -176,6 +182,10 @@ Clip.prototype = {
     this.startTime = Math.max(0, this.startTime);
     this.offset = Math.max(0, this.offset);
     this.duration = Math.min(this.duration, this.wave.length / this.sampleRate / 2);
+  },
+  
+  clone: function() {
+    return $.extend(true, {}, this);
   }
 
 };

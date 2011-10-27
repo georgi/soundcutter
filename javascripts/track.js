@@ -6,7 +6,7 @@ var Track = function(options) {
   this.output = this.context.createGainNode();
   this.output.connect(this.context.destination);
 
-  this.element = $('<div class="track"></div>');
+  this.element = $('<div id="'+options.name+'" class="track"></div>');
   this.element.width(10000);
 
   $('#arrangement').append(this.element);
@@ -21,11 +21,15 @@ Track.prototype = {
       destination: this.output 
     }, options));
 
-    this.clips.push(clip);
-    this.element.append(clip.element);
+    this.addClip(clip);
 
     return clip;
+  },
+
+  addClip: function(clip) {
+    this.clips.push(clip);
+    this.element.append(clip.element);
   }
 
-}
+};
 

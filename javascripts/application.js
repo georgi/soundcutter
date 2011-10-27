@@ -65,7 +65,7 @@ var Application = {
     case 39:
       event.preventDefault();
       this.time += 0.5;
-        this.startTime += 0.5;
+      this.startTime += 0.5;
       break;
 
     case 32:
@@ -77,6 +77,13 @@ var Application = {
       else {
         this.startTime = this.context.currentTime - this.time;
         this.running = true;
+      }
+      break;
+      
+    case 86:
+      event.preventDefault();
+      if (event.ctrlKey) {
+        this.pasteClips();
       }
       break;
     }
@@ -104,6 +111,16 @@ var Application = {
     this.eachClip(function(clip) {
       clip.pixelsPerSecond = this.pixelsPerSecond;
       clip.updateGraphics();
+    }, this);
+  },
+
+  pasteClips: function() {
+    this.eachClip(function(clip) {
+      if(clip.selected) {      
+        var clone = clip.clone();
+        clone.selected = false;
+        this.tracks[1].addClip(clone);
+      }
     }, this);
   },
 
