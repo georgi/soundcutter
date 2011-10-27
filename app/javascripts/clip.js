@@ -25,8 +25,8 @@ var Clip = function(options) {
   this._onDrag = _.bind(this.onDrag, this);
   this._onDragEnd = _.bind(this.onDragEnd, this);
 
-  if (this.buffer) {
-    setTimeout(_.bind(this.setBuffer, this, this.buffer), 100);
+  if (this.array_buffer) {
+    setTimeout(_.bind(this.setBuffer, this, this.array_buffer), 100);
   }
 };
 
@@ -134,6 +134,8 @@ Clip.prototype = {
   
   onMouseClick: function(event) {
     this.selected = this.selected ? false : true;    
+    var style = this.selected ? {'border' : '1px dashed red'} : {'border':'1px solid #EEE'};
+    this.element.css(style);
   },
   
   onMouseDown: function(event) {
@@ -184,8 +186,13 @@ Clip.prototype = {
     this.duration = Math.min(this.duration, this.wave.length / this.sampleRate / 2);
   },
   
-  clone: function() {
-    return $.extend(true, {}, this);
+  clone: function(options) {
+    return new Clip(_.extend({ 
+      context: this.context,
+      pixelsPerSecond: this.pixelsPerSecond,
+      destination: this.destination,
+      array_buffer: this.array_buffer      
+    }, options));
   }
 
 };

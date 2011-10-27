@@ -23,7 +23,7 @@ var Application = {
     event.preventDefault();
 
     this.loadBuffer(event.target.href, _.bind(function(buffer) {
-      this.tracks[0].createClip({ buffer: buffer });      
+      this.tracks[0].createClip({ array_buffer: buffer });      
     }, this));
   },
 
@@ -119,7 +119,7 @@ var Application = {
       if(clip.selected) {      
         var clone = clip.clone();
         clone.selected = false;
-        this.tracks[1].addClip(clone);
+        this.tracks[0].addClip(clone);
       }
     }, this);
   },
