@@ -12,8 +12,10 @@ var Application = {
     this.running = false;
     this.tracks = [];
     this.context = new webkitAudioContext();
-    this.pixelsPerSecond = 100;
     this.playPosition = $('#play-position');
+    
+    this.bpm = 80;
+    this.pixelsPerBeat = 50;
 
     this.searchInput = $("#search-input");
 
@@ -34,6 +36,10 @@ var Application = {
     };
 
     this.loadTracks();
+  },
+
+  pixelsPerSecond: function() {
+    return (this.bpm / 60) * this.pixelsPerBeat;
   },
 
   render: function(name, context) {
@@ -60,7 +66,7 @@ var Application = {
   },
 
   loadTracks: function() {
-    $('#search').html('<img src="/loading.gif"/>');
+    $('#search').html('<img src="/loading.gif"/>')
     $.ajax({
       url: "/_api/users/user1239006/tracks.json",
       data: {
@@ -106,26 +112,26 @@ var Application = {
   createTrack: function(options) {
     var track = new Track(_.extend({
       context: this.context,
-      pixelsPerSecond: this.pixelsPerSecond
+      application: this
     }, options));
 
     this.tracks.push(track);
 
     return track;
   },
-
+  
   onKeyDown: function(event) {
     switch (event.keyCode) {
     case 38:
       if (event.ctrlKey) {
-        this.pixelsPerSecond /= 2;
+        this.pixelsPerBeat /= 2;
         this.updateGraphics();
       }
       break;
 
     case 40:
       if (event.ctrlKey) {
-        this.pixelsPerSecond *= 2;
+        this.pixelsPerSecond() *= 2;
         this.updateGraphics();
       }
       break;
@@ -155,6 +161,13 @@ var Application = {
         this.running = true;
       }
       break;
+      
+    case 86:
+      event.preventDefault();
+      if (event.ctrlKey) {
+        this.pasteClips();
+      }
+      break;
     }
   },
 
@@ -173,13 +186,22 @@ var Application = {
       }, this);
     }
 
-    this.playPosition.css('left', this.time * this.pixelsPerSecond);
+    this.playPosition.css('left', this.time * this.pixelsPerSecond());
   },
 
   updateGraphics: function() {
     this.eachClip(function(clip) {
-      clip.pixelsPerSecond = this.pixelsPerSecond;
       clip.updateGraphics();
+    }, this);
+  },
+
+  pasteClips: function() {
+    this.eachClip(function(clip) {
+      if(clip.selected) {      
+        var clone = clip.clone();
+        clone.selected = false;
+        this.tracks[0].addClip(clone);
+      }
     }, this);
   },
 

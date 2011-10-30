@@ -49,10 +49,14 @@
     left: 0px;
     width: 20px;
     height: 100px;
-    background: #ccc;
     position: absolute;
     opacity: 0.5;
     z-index: 10;
+}
+
+.clip:hover .left-handle
+{
+    Background: #ccc;
 }
 
 .clip .right-handle
@@ -61,8 +65,12 @@
     right: 0px;
     width: 20px;
     height: 100px;
-    background: #ccc;
     position: absolute;
     opacity: 0.5;
     z-index: 10;
+}
+
+.clip:hover .right-handle
+{
+    Background: #ccc;
 }

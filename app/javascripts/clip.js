@@ -1,16 +1,17 @@
 var Clip = function(options) {
-  _.extend(this, options);
-
-  this.startTime = 0;
-  this.duration = 0;
-  this.offset = 0;
-  this.playing = false;
-
+  _.extend(this, {
+    startTime : 0,
+    duration : 0,
+    offset : 0,
+    playing : false,
+    selected : false
+  }, options);
+  
   this.element = $('<div class="clip"></div>');
   this.canvas = $('<canvas class="canvas"></canvas>');
   this.leftHandle = $('<div class="left-handle"></div>');
   this.rightHandle = $('<div class="right-handle"></div>');
-
+  
   this.element.append(this.leftHandle);
   this.element.append(this.canvas);
   this.element.append(this.rightHandle);
@@ -18,12 +19,15 @@ var Clip = function(options) {
   this.canvas.attr('height', 100);
 
   this.element.mousedown(_.bind(this.onMouseDown, this));
+  this.element.mouseover(_.bind(this.onMouseOver, this));
+  this.element.mouseleave(_.bind(this.onMouseLeave, this));
 
   this._onDrag = _.bind(this.onDrag, this);
   this._onDragEnd = _.bind(this.onDragEnd, this);
 
   if (this.buffer) {
-    setTimeout(_.bind(this.setBuffer, this, this.buffer), 100);
+    this.setBuffer(this.buffer);
+    // setTimeout(_.bind(this.setBuffer, this, this.buffer), 100);
   }
 };
 
@@ -33,6 +37,10 @@ Clip.prototype = {
     this.offset = start;
     this.duration = length;
     this.updateElement();
+  },
+  
+  pixelsPerSecond: function() {
+    return this.application.pixelsPerSecond();
   },
 
   updateAudio: function(context) {
@@ -68,9 +76,9 @@ Clip.prototype = {
   },
 
   updateElement: function() {
-    this.element.css('left', this.startTime * this.pixelsPerSecond);
-    this.element.width(this.duration * this.pixelsPerSecond);
-    this.canvas.css('left', -this.offset * this.pixelsPerSecond);
+    this.element.css('left', this.startTime * this.pixelsPerSecond());
+    this.element.width(this.duration * this.pixelsPerSecond());
+    this.canvas.css('left', -this.offset * this.pixelsPerSecond());
   },
 
   updateGraphics: function() {
@@ -96,18 +104,20 @@ Clip.prototype = {
 
   setBuffer: function(buffer) {
     this.buffer = buffer;
-    this.duration = this.buffer.duration;
+    if (this.duration == 0) {
+      this.duration = this.buffer.duration;
+    }
     this.updateElement();
     this.draw();
   },
 
   draw: function() {
     var context = this.canvas.get(0).getContext("2d"),
-        width = (this.buffer.length / this.buffer.sampleRate) * this.pixelsPerSecond,
+        width = (this.buffer.length / this.buffer.sampleRate) * this.pixelsPerSecond(),
         wave = (this.buffer.getChannelData(0)),
         height = 100,
         ymid = height / 2,
-        xstep = parseInt(this.buffer.sampleRate / this.pixelsPerSecond);
+        xstep = parseInt(this.buffer.sampleRate / this.pixelsPerSecond());
 
     this.canvas.attr('height', height);
     this.canvas.attr('width', width);
@@ -125,6 +135,18 @@ Clip.prototype = {
     context.stroke();
   },
 
+  select: function() {
+    this.selected = this.selected ? false : true;    
+    var style = this.selected ? {'border' : '1px dashed red'} : {'border':'1px solid #EEE'};
+    this.element.css(style);
+  },
+  
+  onMouseLeave: function(event) {
+  },
+  
+  onMouseOver: function(event) {
+  },
+
   onMouseDown: function(event) {
     this.drag = {
       target: event.target.className,
@@ -134,12 +156,14 @@ Clip.prototype = {
       pageX: event.pageX
     };
 
+    this.select();    
+    
     $(document).bind('mousemove', this._onDrag);
     $(document).bind('mouseup', this._onDragEnd);
   },
 
   onDrag: function(event) {
-    var delta = (event.pageX - this.drag.pageX) / this.pixelsPerSecond;
+    var delta = (event.pageX - this.drag.pageX) / this.pixelsPerSecond();
 
     switch (this.drag.target) {
     case 'canvas':
@@ -171,6 +195,18 @@ Clip.prototype = {
     this.startTime = Math.max(0, this.startTime);
     this.offset = Math.max(0, this.offset);
     this.duration = Math.min(this.duration, this.buffer.duration);
+  },
+  
+  clone: function(options) {
+    return new Clip(_.extend({ 
+      context: this.context,
+      application: this.application,
+      destination: this.destination,
+      duration: this.duration,
+      startTime: this.startTime,
+      offset: this.offset,
+      buffer: this.buffer
+    }, options));
   }
 
 };
