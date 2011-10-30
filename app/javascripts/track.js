@@ -17,8 +17,8 @@ Track.prototype = {
   createClip: function(options) {
     var clip = new Clip(_.extend({ 
       context: this.context,
-      pixelsPerSecond: this.pixelsPerSecond,
-      destination: this.output 
+      application: this.application,
+      destination: this.output
     }, options));
 
     this.addClip(clip);

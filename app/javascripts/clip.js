@@ -1,13 +1,13 @@
 var Clip = function(options) {
-  _.extend(this, options);
-
-  this.startTime = 0;
-  this.sampleRate = 44100;
-  this.duration = 0;
-  this.offset = 0;
-  this.playing = false;
-  this.selected = false;
-
+  _.extend(this, {
+    startTime : 0,
+    sampleRate : 44100,
+    duration : 0,
+    offset : 0,
+    playing : false,
+    selected : false
+  }, options);
+  
   this.element = $('<div class="clip"></div>');
   this.canvas = $('<canvas class="canvas"></canvas>');
   this.leftHandle = $('<div class="left-handle"></div>');
@@ -20,13 +20,12 @@ var Clip = function(options) {
   this.canvas.attr('height', 100);
 
   this.element.mousedown(_.bind(this.onMouseDown, this));
-  this.element.click(_.bind(this.onMouseClick, this));
 
   this._onDrag = _.bind(this.onDrag, this);
   this._onDragEnd = _.bind(this.onDragEnd, this);
 
-  if (this.array_buffer) {
-    setTimeout(_.bind(this.setBuffer, this, this.array_buffer), 100);
+  if (this.arrayBuffer) {
+    setTimeout(_.bind(this.setBuffer, this, this.arrayBuffer), 100);
   }
 };
 
@@ -36,6 +35,10 @@ Clip.prototype = {
     this.offset = start;
     this.duration = length;
     this.updateElement();
+  },
+  
+  pixelsPerSecond: function() {
+    return this.application.pixelsPerSecond();
   },
 
   updateAudio: function(context) {
@@ -75,9 +78,9 @@ Clip.prototype = {
   },
 
   updateElement: function() {
-    this.element.css('left', this.startTime * this.pixelsPerSecond);
-    this.element.width(this.duration * this.pixelsPerSecond);
-    this.canvas.css('left', -this.offset * this.pixelsPerSecond);
+    this.element.css('left', this.startTime * this.pixelsPerSecond());
+    this.element.width(this.duration * this.pixelsPerSecond());
+    this.canvas.css('left', -this.offset * this.pixelsPerSecond());
   },
 
   updateGraphics: function() {
@@ -102,7 +105,9 @@ Clip.prototype = {
   setBuffer: function(buffer) {
     this.buffer = this.context.createBuffer(buffer, false);
     this.wave = new Int16Array(buffer);
-    this.duration = this.wave.length / this.sampleRate / 2;
+    if(this.duration === 0) {      
+      this.duration = this.wave.length / this.sampleRate / 2;
+    }
     this.updateElement();
     this.draw();
   },
@@ -110,11 +115,11 @@ Clip.prototype = {
   draw: function() {
     var context = this.canvas.get(0).getContext("2d"),
         wave = this.wave,
-        width = (this.wave.length / this.sampleRate) * this.pixelsPerSecond,
+        width = (this.wave.length / this.sampleRate) * this.pixelsPerSecond(),
         height = 100,
         yscale = height / 65536 * 2,
         ymid = height / 2,
-        xstep = parseInt(this.sampleRate * 2 / this.pixelsPerSecond);
+        xstep = parseInt(this.sampleRate * 2 / this.pixelsPerSecond());
 
     this.canvas.attr('height', height);
     this.canvas.attr('width', width);
@@ -128,11 +133,11 @@ Clip.prototype = {
     for (var i = 0; i < width; i++) {
       context.lineTo(i, ymid + wave[i * xstep] * yscale);
     }
-    
+
     context.stroke();
   },
-  
-  onMouseClick: function(event) {
+
+  select: function() {
     this.selected = this.selected ? false : true;    
     var style = this.selected ? {'border' : '1px dashed red'} : {'border':'1px solid #EEE'};
     this.element.css(style);
@@ -147,12 +152,14 @@ Clip.prototype = {
       pageX: event.pageX
     };
 
+    this.select();    
+    
     $(document).bind('mousemove', this._onDrag);
     $(document).bind('mouseup', this._onDragEnd);
   },
 
   onDrag: function(event) {
-    var delta = (event.pageX - this.drag.pageX) / this.pixelsPerSecond;
+    var delta = (event.pageX - this.drag.pageX) / this.pixelsPerSecond();
 
     switch (this.drag.target) {
     case 'canvas':
@@ -189,9 +196,12 @@ Clip.prototype = {
   clone: function(options) {
     return new Clip(_.extend({ 
       context: this.context,
-      pixelsPerSecond: this.pixelsPerSecond,
+      application: this.application,
       destination: this.destination,
-      array_buffer: this.array_buffer      
+      duration: this.duration,
+      startTime: this.startTime,
+      offset: this.offset,
+      arrayBuffer: this.arrayBuffer
     }, options));
   }
 
