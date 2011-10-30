@@ -1,5 +1,5 @@
 <ul>
   {% _.each(tracks, function(track) { %}
-    <li><a href="{{ track.stream_url }}?client_id={{ clientId }}">{{ track.title }}</a></li>
+    <li><a href="{{ track.stream_url }}">{{ track.title }}</a></li>
   {% }); %}
 </ul>

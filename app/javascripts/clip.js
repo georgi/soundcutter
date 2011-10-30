@@ -2,7 +2,6 @@ var Clip = function(options) {
   _.extend(this, options);
 
   this.startTime = 0;
-  this.sampleRate = 44100;
   this.duration = 0;
   this.offset = 0;
   this.playing = false;
@@ -37,7 +36,7 @@ Clip.prototype = {
   },
 
   updateAudio: function(context) {
-    if (this.wave) {
+    if (this.buffer) {
       if (!this.playing && 
           context.time + context.interval >= this.startTime && 
           context.time + context.interval < this.startTime + this.duration) {
@@ -45,7 +44,6 @@ Clip.prototype = {
         this.source = this.context.createBufferSource();
         this.source.buffer = this.buffer;
         this.source.connect(this.destination);
-
         // this.source.noteOn(context.startTime + this.startTime);
 
         var offset = this.offset;
@@ -56,11 +54,8 @@ Clip.prototype = {
           duration -= context.time - this.startTime;
         }
 
-        console.log(offset, duration);
-
-
-        this.source.noteGrainOn(context.startTime + this.startTime, offset, duration - 0.1);
-        // this.source.noteGrainOn(context.startTime + this.startTime, this.offset, this.duration);
+        // this.source.noteGrainOn(context.startTime + this.startTime, offset, duration - 0.1);
+        this.source.noteGrainOn(context.startTime + this.startTime, offset, duration);
         this.playing = true;
       }
 
@@ -92,27 +87,27 @@ Clip.prototype = {
   // },
 
   stop: function() {
-    this.source.noteOff(0);
-    this.source = null;
+    if (this.source) {
+      this.source.noteOff(0);
+      this.source = null;
+    }
     this.playing = false;
   },
 
   setBuffer: function(buffer) {
-    this.buffer = this.context.createBuffer(buffer, false);
-    this.wave = new Int16Array(buffer);
-    this.duration = this.wave.length / this.sampleRate / 2;
+    this.buffer = buffer;
+    this.duration = this.buffer.duration;
     this.updateElement();
     this.draw();
   },
 
   draw: function() {
     var context = this.canvas.get(0).getContext("2d"),
-        wave = this.wave,
-        width = (this.wave.length / this.sampleRate) * this.pixelsPerSecond,
+        width = (this.buffer.length / this.buffer.sampleRate) * this.pixelsPerSecond,
+        wave = (this.buffer.getChannelData(0)),
         height = 100,
-        yscale = height / 65536 * 2,
         ymid = height / 2,
-        xstep = parseInt(this.sampleRate * 2 / this.pixelsPerSecond);
+        xstep = parseInt(this.buffer.sampleRate / this.pixelsPerSecond);
 
     this.canvas.attr('height', height);
     this.canvas.attr('width', width);
@@ -124,7 +119,7 @@ Clip.prototype = {
     context.moveTo(0, ymid);
 
     for (var i = 0; i < width; i++) {
-      context.lineTo(i, ymid + wave[i * xstep] * yscale);
+      context.lineTo(i, ymid + wave[i * xstep] * height);
     }
 
     context.stroke();
@@ -175,7 +170,7 @@ Clip.prototype = {
   checkBounds: function() {
     this.startTime = Math.max(0, this.startTime);
     this.offset = Math.max(0, this.offset);
-    this.duration = Math.min(this.duration, this.wave.length / this.sampleRate / 2);
+    this.duration = Math.min(this.duration, this.buffer.duration);
   }
 
 };

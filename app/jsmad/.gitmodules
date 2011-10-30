@@ -1,3 +1,0 @@
-[submodule "audiolib.js"]
-	path = audiolib.js
-	url = git://github.com/jussi-kalliokoski/audiolib.js.git

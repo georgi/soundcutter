@@ -29,14 +29,15 @@ var Application = {
 
     this.loadTemplate("search/result");
 
-    this.renderContect = { 
-      clientId: this.clientId,
+    this.renderContext = { 
       render: _.bind(this.render, this)
     };
+
+    this.loadTracks();
   },
 
   render: function(name, context) {
-    return this.templates[name](_.extend(this.renderContect, context));
+    return this.templates[name](_.extend(this.renderContext, context));
   },
 
   loadTemplate: function(name) {
@@ -53,12 +54,23 @@ var Application = {
   onEnterSearch: function(event) {
     if (event.keyCode == 13) {
       $('#search').html('<img src="/loading.gif"/>');
-      this.searchTracks(this.searchInput.val(), _.bind(this.onResponseSearch, this));
+      this.searchTracks(this.searchInput.val(), _.bind(this.renderSearch, this));
       $(event.target).val('');
     }
   },
 
-  onResponseSearch: function(data) {
+  loadTracks: function() {
+    $('#search').html('<img src="/loading.gif"/>');
+    $.ajax({
+      url: "/_api/users/user1239006/tracks.json",
+      data: {
+        client_id: this.clientId
+      },
+      success: _.bind(this.renderSearch, this)
+    });
+  },
+
+  renderSearch: function(data) {
     $('#search').html(this.render("search/result", { tracks: data }));
   },
 
@@ -75,19 +87,22 @@ var Application = {
 
   onClickSample: function(event) {
     event.preventDefault();
-   
+    
     $.ajax({
       url: event.target.href.replace("http://api.soundcloud.com/", "/_api/"),
+      data: {
+        client_id: this.clientId
+      },
       success: _.bind(function(url) {
-        this.loadBuffer(url.replace("http://ak-media.soundcloud.com/", "/mp3/"), _.bind(function(buffer) {
-          // this.tracks[0].createClip({ buffer: buffer });      
-
-          console.log(buffer);
+        this.loadBuffer(url.replace("http://ak-media.soundcloud.com/", "/mp3/"), _.bind(function(arrayBuffer) {
+          this.context.decodeAudioData(arrayBuffer, _.bind(function(buffer) {
+            this.tracks[0].createClip({ buffer: buffer });        
+          }, this));
         }, this));
       }, this)
     });
   },
-
+  
   createTrack: function(options) {
     var track = new Track(_.extend({
       context: this.context,
