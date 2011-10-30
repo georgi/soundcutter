@@ -9,6 +9,7 @@ var connect   = require('connect');
 var paperboy  = require('paperboy');
 
 var proxy     = require('mountable-proxy');
+var http      = require('http');
 
 // configuration
 var conf     = require('config/base');
@@ -19,6 +20,7 @@ var package  = JSON.parse(fs.readFileSync('package.json'));
 
 var httpServer    = connect.createServer();
 var apiProxy      = proxy.createProxy(conf.apiProxy);
+var mp3Proxy      = proxy.createProxy(conf.mp3Proxy);
 
 // bindings
 httpServer
@@ -32,7 +34,25 @@ httpServer
 
 function serveHTTP(app) {
   app.all(routes.api, function(request, response, next) {
-    apiProxy.http(request, response);
+
+    if (request.url.match(/stream/)) {
+      var options = apiProxy.proxyOptions(request);
+      var proxyRequest = http.request(options);
+
+      proxyRequest.on('response', function(proxyResponse) {
+        var location = apiProxy.getLocation(proxyRequest, proxyResponse);
+        response.end(location);
+      });
+
+      request.pipe(proxyRequest);
+    }
+    else {
+      apiProxy.http(request, response);      
+    }
+  });
+
+  app.all(routes.mp3, function(request, response, next) {
+    mp3Proxy.http(request, response);
   });
 
   app.get(routes.wildcard, function(request, response, next) {

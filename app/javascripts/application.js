@@ -1,6 +1,12 @@
 var Application = {
 
   initialize: function() {
+    _.templateSettings = {
+      interpolate : /\{\{(.+?)\}\}/g,
+      evaluate : /\{%(.+?)%\}/g
+    };
+    this.clientId = "d9ec4081d8936c9a35d6b2f1c5903f51";
+    this.templates = {};
     this.time = 0;
     this.interval = 0.050;
     this.running = false;
@@ -9,22 +15,77 @@ var Application = {
     this.pixelsPerSecond = 100;
     this.playPosition = $('#play-position');
 
+    this.searchInput = $("#search-input");
+
     $(document).keydown(_.bind(this.onKeyDown, this));
+    this.searchInput.keydown(_.bind(this.onEnterSearch, this));
 
     this.createTrack({ name: 'track1' });
     this.createTrack({ name: 'track2' });
 
-    $('#samples a').live('click', _.bind(this.onClickSample, this));
+    $('#search a').live('click', _.bind(this.onClickSample, this));
 
     setInterval(_.bind(this.updateAudio, this), this.interval * 1000);
+
+    this.loadTemplate("search/result");
+
+    this.renderContect = { 
+      clientId: this.clientId,
+      render: _.bind(this.render, this)
+    };
+  },
+
+  render: function(name, context) {
+    return this.templates[name](_.extend(this.renderContect, context));
+  },
+
+  loadTemplate: function(name) {
+    $.ajax({
+      url: "/templates/" + name + ".html",
+      success: _.bind(this.onLoadTemplate, this, name)
+    });
+  },
+
+  onLoadTemplate: function(name, data) {
+    this.templates[name] = _.template(data);
+  },
+
+  onEnterSearch: function(event) {
+    if (event.keyCode == 13) {
+      $('#search').html('<img src="/loading.gif"/>');
+      this.searchTracks(this.searchInput.val(), _.bind(this.onResponseSearch, this));
+      $(event.target).val('');
+    }
+  },
+
+  onResponseSearch: function(data) {
+    $('#search').html(this.render("search/result", { tracks: data }));
+  },
+
+  searchTracks: function(q, callback) {
+    $.ajax({
+      url: "/_api/tracks.json",
+      data: {
+        client_id: this.clientId,
+        q: q
+      },
+      success: callback
+    });
   },
 
   onClickSample: function(event) {
     event.preventDefault();
+   
+    $.ajax({
+      url: event.target.href.replace("http://api.soundcloud.com/", "/_api/"),
+      success: _.bind(function(url) {
+        this.loadBuffer(url.replace("http://ak-media.soundcloud.com/", "/mp3/"), _.bind(function(buffer) {
+          // this.tracks[0].createClip({ buffer: buffer });      
 
-    this.loadBuffer(event.target.href, _.bind(function(buffer) {
-      this.tracks[0].createClip({ buffer: buffer });      
-    }, this));
+          console.log(buffer);
+        }, this));
+      }, this)
+    });
   },
 
   createTrack: function(options) {
@@ -65,7 +126,7 @@ var Application = {
     case 39:
       event.preventDefault();
       this.time += 0.5;
-        this.startTime += 0.5;
+      this.startTime += 0.5;
       break;
 
     case 32:

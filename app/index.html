@@ -1,27 +1,41 @@
 <html>
   <head>
-    <script type="text/javascript" src="javascripts/jquery.js"></script>
-    <script type="text/javascript" src="javascripts/underscore.js"></script>
-    <script type="text/javascript" src="javascripts/track.js"></script>
-    <script type="text/javascript" src="javascripts/clip.js"></script>
-    <script type="text/javascript" src="javascripts/application.js"></script>
+    <script type="text/javascript" src="/jsmad/src/mad.js"></script>
+    <script type="text/javascript" src="/jsmad/src/rq_table.js"></script>
+    <script type="text/javascript" src="/jsmad/src/imdct_s.js"></script>
+    <script type="text/javascript" src="/jsmad/src/huffman.js"></script>
+    <script type="text/javascript" src="/jsmad/src/bit.js"></script>
+    <script type="text/javascript" src="/jsmad/src/stream.js"></script>
+    <script type="text/javascript" src="/jsmad/src/layer3.js"></script>
+    <script type="text/javascript" src="/jsmad/src/frame.js"></script>
+    <script type="text/javascript" src="/jsmad/src/synth.js"></script>
+    <script type="text/javascript" src="/jsmad/src/bytestream.js"></script>
+    <script type="text/javascript" src="/jsmad/src/filestream.js"></script>
+    <script type="text/javascript" src="/jsmad/src/substream.js"></script>
+    <script type="text/javascript" src="/jsmad/src/id3v22stream.js"></script>
+    <script type="text/javascript" src="/jsmad/src/id3v23stream.js"></script>
+    <script type="text/javascript" src="/jsmad/src/mp3file.js"></script>
+    <script type="text/javascript" src="/jsmad/src/ajaxstream.js"></script>
+    <script type="text/javascript" src="/jsmad/src/stringstream.js"></script>
+    <script type="text/javascript" src="/jsmad/src/player.js"></script>
+    <script type="text/javascript" src="/javascripts/jquery.js"></script>
+    <script type="text/javascript" src="/javascripts/underscore.js"></script>
+    <script type="text/javascript" src="/javascripts/track.js"></script>
+    <script type="text/javascript" src="/javascripts/clip.js"></script>
+    <script type="text/javascript" src="/javascripts/application.js"></script>
     <link rel="stylesheet" href="style.css" type="text/css" media="screen" />
   </head>
   <body onload="Application.initialize()">
     <div id="application">
-      <div id="sidebar">
-        <ul id="samples">
-          <li><a href="/amen_brother.wav">amen_brother.wav</a></li>
-          <li><a href="/apache.wav">apache.wav</a></li>
-          <li><a href="/big_beat.wav">big_beat.wav</a></li>
-        </ul>
+      <input id="search-input" type="text" name="q" value="" />
+      <div id="search">
       </div>
       <div id="toolbar">
       </div>
       <div id="arrangement">
         <div id="play-position">
         </div>
-     </div>
+      </div>
     </div>
   </body>
 </html>

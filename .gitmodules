@@ -1,0 +1,3 @@
+[submodule "jsmad"]
+	path = jsmad
+	url = https://github.com/nddrylliog/jsmad.git
