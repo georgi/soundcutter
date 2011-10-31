@@ -13,6 +13,9 @@
     position: relative;
     width: 100%;
     overflow: scroll;
+    border-top: 1px solid #ccc;
+    border-left: 1px solid #ccc;
+    border-right: 1px solid #ccc;
 }
 
 #search
@@ -26,9 +29,16 @@
 
 .track
 {
-    border: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
     position: relative;
     height: 100px;
+    width: 100%;
+}
+
+.track canvas
+{
+    position: absolute;
+    left: 0px;
 }
 
 .clip

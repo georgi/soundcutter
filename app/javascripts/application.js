@@ -8,15 +8,13 @@ var Application = {
     this.clientId = "d9ec4081d8936c9a35d6b2f1c5903f51";
     this.templates = {};
     this.time = 0;
-    this.interval = 0.050;
     this.running = false;
     this.tracks = [];
     this.context = new webkitAudioContext();
     this.playPosition = $('#play-position');
-    
-    this.bpm = 80;
-    this.pixelsPerBeat = 50;
-
+    this.stepsPerBeat = 4;
+    this.totalSteps = 16;
+    this.setBpm(120);
     this.searchInput = $("#search-input");
 
     $(document).keydown(_.bind(this.onKeyDown, this));
@@ -27,8 +25,6 @@ var Application = {
 
     $('#search a').live('click', _.bind(this.onClickSample, this));
 
-    setInterval(_.bind(this.updateAudio, this), this.interval * 1000);
-
     this.loadTemplate("search/result");
 
     this.renderContext = { 
@@ -36,10 +32,23 @@ var Application = {
     };
 
     this.loadTracks();
+    this.scheduleAudio();
   },
-
-  pixelsPerSecond: function() {
-    return (this.bpm / 60) * this.pixelsPerBeat;
+  
+  scheduleAudio: function() {
+    clearInterval(this.interval);
+    this.interval = setInterval(_.bind(this.updateAudio, this), this.secondsPerStep * 1000);
+    setInterval(_.bind(this.updatePosition, this), 10);
+  },
+  
+  setBpm: function(bpm) {
+    this.bpm = bpm;
+    this.secondsPerBeat = 60 / this.bpm;
+    this.secondsPerStep = this.secondsPerBeat / this.stepsPerBeat;
+    this.pixelsPerBeat = $('#arrangement').width() / 4;
+    this.pixelsPerStep = this.pixelsPerBeat / this.stepsPerBeat;
+    this.pixelsPerSecond = this.secondsPerBeat * this.pixelsPerBeat * 4;
+    this.totalTime = this.totalSteps * this.secondsPerStep;
   },
 
   render: function(name, context) {
@@ -66,7 +75,7 @@ var Application = {
   },
 
   loadTracks: function() {
-    $('#search').html('<img src="/loading.gif"/>')
+    $('#search').html('<img src="/loading.gif"/>');
     $.ajax({
       url: "/_api/users/user1239006/tracks.json",
       data: {
@@ -122,33 +131,19 @@ var Application = {
   
   onKeyDown: function(event) {
     switch (event.keyCode) {
-    case 38:
-      if (event.ctrlKey) {
-        this.pixelsPerBeat /= 2;
-        this.updateGraphics();
-      }
-      break;
+      // case 37:
+      //   event.preventDefault();
+      //   if (this.time > 0) {
+      //     this.time -= this.secondsPerStep();
+      //     this.startTime -= this.secondsPerStep();
+      //   }
+      //   break;
 
-    case 40:
-      if (event.ctrlKey) {
-        this.pixelsPerSecond() *= 2;
-        this.updateGraphics();
-      }
-      break;
-
-    case 37:
-      event.preventDefault();
-      if (this.time > 0) {
-        this.time -= 0.5;
-        this.startTime -= 0.5;
-      }
-      break;
-
-    case 39:
-      event.preventDefault();
-      this.time += 0.5;
-      this.startTime += 0.5;
-      break;
+      // case 39:
+      //   event.preventDefault();
+      //   this.time += this.secondsPerStep();
+      //   this.startTime += this.secondsPerStep();
+      //   break;
 
     case 32:
       event.preventDefault();
@@ -157,7 +152,8 @@ var Application = {
         this.stopClips();
       }
       else {
-        this.startTime = this.context.currentTime - this.time;
+        this.step = 0;
+        this.startTime = this.context.currentTime;
         this.running = true;
       }
       break;
@@ -179,14 +175,18 @@ var Application = {
 
   updateAudio: function() {
     if (this.running) {
-      this.time = this.context.currentTime - this.startTime;
-
+      this.updatePosition();
       this.eachClip(function(clip) {
         clip.updateAudio(this);
       }, this);
     }
-
-    this.playPosition.css('left', this.time * this.pixelsPerSecond());
+  },
+  
+  updatePosition: function() {
+    if (this.running) {
+      this.time = (this.context.currentTime - this.startTime) % this.totalTime;
+      this.playPosition.css('left', this.time * this.pixelsPerSecond);
+    }
   },
 
   updateGraphics: function() {

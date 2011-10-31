@@ -16,6 +16,8 @@ var Clip = function(options) {
   this.element.append(this.canvas);
   this.element.append(this.rightHandle);
 
+  this.updateElement();
+
   this.canvas.attr('height', 100);
 
   this.element.mousedown(_.bind(this.onMouseDown, this));
@@ -26,8 +28,7 @@ var Clip = function(options) {
   this._onDragEnd = _.bind(this.onDragEnd, this);
 
   if (this.buffer) {
-    this.setBuffer(this.buffer);
-    // setTimeout(_.bind(this.setBuffer, this, this.buffer), 100);
+    this.draw();
   }
 };
 
@@ -38,21 +39,16 @@ Clip.prototype = {
     this.duration = length;
     this.updateElement();
   },
-  
-  pixelsPerSecond: function() {
-    return this.application.pixelsPerSecond();
-  },
 
   updateAudio: function(context) {
     if (this.buffer) {
       if (!this.playing && 
-          context.time + context.interval >= this.startTime && 
-          context.time + context.interval < this.startTime + this.duration) {
+          context.time + context.secondsPerStep >= this.startTime && 
+          context.time + context.secondsPerStep < this.startTime + this.duration) {
 
         this.source = this.context.createBufferSource();
         this.source.buffer = this.buffer;
         this.source.connect(this.destination);
-        // this.source.noteOn(context.startTime + this.startTime);
 
         var offset = this.offset;
         var duration = this.duration;
@@ -62,12 +58,11 @@ Clip.prototype = {
           duration -= context.time - this.startTime;
         }
 
-        // this.source.noteGrainOn(context.startTime + this.startTime, offset, duration - 0.1);
         this.source.noteGrainOn(context.startTime + this.startTime, offset, duration);
         this.playing = true;
       }
 
-      if (this.playing && context.time + context.interval >= this.startTime + this.duration) {
+      if (this.playing && context.time + context.secondsPerStep >= this.startTime + this.duration) {
         this.source.noteOff(context.startTime + this.startTime + this.duration);
         this.playing = false;
         this.source = null;
@@ -76,9 +71,9 @@ Clip.prototype = {
   },
 
   updateElement: function() {
-    this.element.css('left', this.startTime * this.pixelsPerSecond());
-    this.element.width(this.duration * this.pixelsPerSecond());
-    this.canvas.css('left', -this.offset * this.pixelsPerSecond());
+    this.element.css('left', this.startTime * this.application.pixelsPerSecond);
+    this.element.width(this.duration * this.application.pixelsPerSecond);
+    this.canvas.css('left', -this.offset * this.application.pixelsPerSecond);
   },
 
   updateGraphics: function() {
@@ -102,22 +97,13 @@ Clip.prototype = {
     this.playing = false;
   },
 
-  setBuffer: function(buffer) {
-    this.buffer = buffer;
-    if (this.duration == 0) {
-      this.duration = this.buffer.duration;
-    }
-    this.updateElement();
-    this.draw();
-  },
-
   draw: function() {
     var context = this.canvas.get(0).getContext("2d"),
-        width = (this.buffer.length / this.buffer.sampleRate) * this.pixelsPerSecond(),
-        wave = (this.buffer.getChannelData(0)),
+        width = (this.buffer.length / this.buffer.sampleRate) * this.application.pixelsPerSecond,
+        wave = this.buffer.getChannelData(0),
         height = 100,
         ymid = height / 2,
-        xstep = parseInt(this.buffer.sampleRate / this.pixelsPerSecond());
+        xstep = Math.floor(this.buffer.sampleRate / this.application.pixelsPerSecond);
 
     this.canvas.attr('height', height);
     this.canvas.attr('width', width);
@@ -163,7 +149,7 @@ Clip.prototype = {
   },
 
   onDrag: function(event) {
-    var delta = (event.pageX - this.drag.pageX) / this.pixelsPerSecond();
+    var delta = (event.pageX - this.drag.pageX) / this.application.pixelsPerSecond;
 
     switch (this.drag.target) {
     case 'canvas':
