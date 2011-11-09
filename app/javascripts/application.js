@@ -10,20 +10,21 @@ var Application = {
     this.time = 0;
     this.running = false;
     this.tracks = [];
+    this.selection = [];
     this.context = new webkitAudioContext();
     this.playPosition = $('#play-position');
-    this.stepsPerBeat = 4;
-    this.totalSteps = 16;
-    this.setBpm(120);
     this.searchInput = $("#search-input");
+    this.arrangement = $("#arrangement");
+    this.sampleLink = $('#search a');
 
+    this.setBpm(120);
+    this.setPixelsPerSecond(50);
+    
     $(document).keydown(_.bind(this.onKeyDown, this));
+    
     this.searchInput.keydown(_.bind(this.onEnterSearch, this));
-
-    this.createTrack({ name: 'track1' });
-    this.createTrack({ name: 'track2' });
-
-    $('#search a').live('click', _.bind(this.onClickSample, this));
+    this.arrangement.click(_.bind(this.onClickArrangement, this));
+    this.sampleLink.live('click', _.bind(this.onClickSample, this));
 
     this.loadTemplate("search/result");
 
@@ -36,19 +37,23 @@ var Application = {
   },
   
   scheduleAudio: function() {
-    clearInterval(this.interval);
-    this.interval = setInterval(_.bind(this.updateAudio, this), this.secondsPerStep * 1000);
+    setInterval(_.bind(this.updateAudio, this), this.secondsPerBeat * 1000);
     setInterval(_.bind(this.updatePosition, this), 10);
+    setInterval(_.bind(this.updateTime, this), 10);
   },
   
   setBpm: function(bpm) {
     this.bpm = bpm;
     this.secondsPerBeat = 60 / this.bpm;
-    this.secondsPerStep = this.secondsPerBeat / this.stepsPerBeat;
-    this.pixelsPerBeat = $('#arrangement').width() / 4;
-    this.pixelsPerStep = this.pixelsPerBeat / this.stepsPerBeat;
-    this.pixelsPerSecond = this.secondsPerBeat * this.pixelsPerBeat * 4;
-    this.totalTime = this.totalSteps * this.secondsPerStep;
+  },
+
+  setPixelsPerSecond: function(value) {
+    this.pixelsPerSecond = value;
+    this.pixelsPerBeat = this.secondsPerBeat * this.pixelsPerSecond;
+  },
+  
+  visibleRangeInSeconds: function() {
+    return $('#arrangement').width() / this.pixelsPerSecond;
   },
 
   render: function(name, context) {
@@ -101,21 +106,28 @@ var Application = {
   },
 
   onClickSample: function(event) {
+    var link = event.target;
+
     event.preventDefault();
     
     $.ajax({
-      url: event.target.href.replace("http://api.soundcloud.com/", "/_api/"),
+      url: link.href.replace("http://api.soundcloud.com/", "/_api/"),
       data: {
         client_id: this.clientId
       },
       success: _.bind(function(url) {
         this.loadBuffer(url.replace("http://ak-media.soundcloud.com/", "/mp3/"), _.bind(function(arrayBuffer) {
           this.context.decodeAudioData(arrayBuffer, _.bind(function(buffer) {
-            this.tracks[0].createClip({ buffer: buffer });        
+            var track = this.createTrack({ name: $(link).html() });
+            track.createClip({ buffer: buffer });    
           }, this));
         }, this));
       }, this)
     });
+  },
+  
+  onClickArrangement: function(event) {    
+    this.setTime(event.offsetX / this.pixelsPerSecond);
   },
   
   createTrack: function(options) {
@@ -128,49 +140,57 @@ var Application = {
 
     return track;
   },
+
+  setTime: function(time) {
+    this.time = time;
+    this.startTime = this.context.currentTime - this.time;
+    this.updatePosition();
+  },
   
   onKeyDown: function(event) {
+    console.log(event.keyCode);
+    
     switch (event.keyCode) {
-      // case 37:
-      //   event.preventDefault();
-      //   if (this.time > 0) {
-      //     this.time -= this.secondsPerStep();
-      //     this.startTime -= this.secondsPerStep();
-      //   }
-      //   break;
+    case 37: // cursor left
+      event.preventDefault();
+      if (this.time > 0) {
+        this.setTime(this.time - this.secondsPerBeat);
+      }
+      break;
+      
+    case 39: // cursor right
+      event.preventDefault();
+      this.setTime(this.time + this.secondsPerBeat);
+      break;
 
-      // case 39:
-      //   event.preventDefault();
-      //   this.time += this.secondsPerStep();
-      //   this.startTime += this.secondsPerStep();
-      //   break;
-
-    case 32:
+    case 32: // space
       event.preventDefault();
       if (this.running) {
         this.running = false;
         this.stopClips();
       }
       else {
-        this.step = 0;
-        this.startTime = this.context.currentTime;
+        this.startTime = this.context.currentTime - this.time;
         this.running = true;
       }
       break;
-      
-    case 86:
+
+    case 67: // c
       event.preventDefault();
+
+      if (event.ctrlKey) {
+        this.copyClips();
+      }
+      break;
+      
+    case 86: // v
+      event.preventDefault();
+
       if (event.ctrlKey) {
         this.pasteClips();
       }
       break;
     }
-  },
-
-  eachClip: function(callback, scope) {
-    _.each(this.tracks, function(track) {
-      _.each(track.clips, callback, scope);
-    });
   },
 
   updateAudio: function() {
@@ -182,11 +202,17 @@ var Application = {
     }
   },
   
-  updatePosition: function() {
+  updateTime: function() {
     if (this.running) {
-      this.time = (this.context.currentTime - this.startTime) % this.totalTime;
-      this.playPosition.css('left', this.time * this.pixelsPerSecond);
+      this.time = this.context.currentTime - this.startTime;
     }
+  },
+  
+  updatePosition: function() {
+    this.playPosition.css({
+      height: this.arrangement.height(),
+      left: this.time * this.pixelsPerSecond
+    });
   },
 
   updateGraphics: function() {
@@ -194,21 +220,50 @@ var Application = {
       clip.updateGraphics();
     }, this);
   },
+  
+  eachClip: function(callback, scope) {
+    _.each(this.tracks, function(track) {
+      _.each(track.clips, callback, scope);
+    });
+  },
 
+  clips: function() {
+    var clips = [];
+    this.eachClip(function(clip) { clips.push(clip); });
+    return clips;
+  },
+
+  selectClips: function() {
+    _.invoke(this.clips(), "select");
+  },
+  
+  deselectClips: function() {
+    _.invoke(this.clips(), "deselect");
+  },
+
+  selectedClips: function() {
+    return _.filter(this.clips(), function(clip) { return clip.selected; });
+  },
+  
+  copyClips: function() {
+    this.selection = _.sortBy(this.selectedClips(), function(clip) { return clip.startTime; });
+    this.deselectClips();
+  },
+  
   pasteClips: function() {
-    this.eachClip(function(clip) {
-      if(clip.selected) {      
+    if (this.selection.length > 0) {
+      var offset = this.selection[0].startTime;
+
+      _.each(this.selection, function(clip) {
         var clone = clip.clone();
-        clone.selected = false;
-        this.tracks[0].addClip(clone);
-      }
-    }, this);
+        clone.startTime += this.time - offset; 
+        clip.track.addClip(clone);
+      }, this);
+    }
   },
 
   stopClips: function() {
-    this.eachClip(function(clip) {
-      clip.stop();
-    }, this);
+    _.invoke(this.clips(), "stop");
   },
 
   loadBuffer: function(url, callback) {

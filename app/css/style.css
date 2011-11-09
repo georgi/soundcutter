@@ -3,8 +3,7 @@
 {
     position: absolute;
     width: 1px;
-    height: 200px;
-    background: #ccc;
+    background: #777;
     z-index: 10;
 }
 
@@ -27,6 +26,32 @@
     overflow: scroll;
 }
 
+.sound
+{
+    float: left;
+    margin: 0 5px 5px 0;
+}
+
+.sound a
+{
+    display: block;
+    position: relative;
+    color: #444;
+    text-decoration: none;
+}
+
+.sound h6
+{
+    position: absolute;
+    top: 10px;
+}
+
+.sound img
+{
+    background: #999;
+    height: 50px;
+}
+
 .track
 {
     border-bottom: 1px solid #ccc;
@@ -46,6 +71,11 @@
     border: 1px solid #eee;
     position: absolute;
     overflow: hidden;
+}
+
+.clip.selected
+{
+    border: 1px dashed red;
 }
 
 .clip canvas

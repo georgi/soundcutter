@@ -1,7 +1,7 @@
 var Clip = function(options) {
   _.extend(this, {
     startTime : 0,
-    duration : 0,
+    duration : options.buffer ? options.buffer.duration : 0,
     offset : 0,
     playing : false,
     selected : false
@@ -17,8 +17,6 @@ var Clip = function(options) {
   this.element.append(this.rightHandle);
 
   this.updateElement();
-
-  this.canvas.attr('height', 100);
 
   this.element.mousedown(_.bind(this.onMouseDown, this));
   this.element.mouseover(_.bind(this.onMouseOver, this));
@@ -43,8 +41,8 @@ Clip.prototype = {
   updateAudio: function(context) {
     if (this.buffer) {
       if (!this.playing && 
-          context.time + context.secondsPerStep >= this.startTime && 
-          context.time + context.secondsPerStep < this.startTime + this.duration) {
+          context.time + context.secondsPerBeat >= this.startTime && 
+          context.time + context.secondsPerBeat < this.startTime + this.duration) {
 
         this.source = this.context.createBufferSource();
         this.source.buffer = this.buffer;
@@ -62,7 +60,7 @@ Clip.prototype = {
         this.playing = true;
       }
 
-      if (this.playing && context.time + context.secondsPerStep >= this.startTime + this.duration) {
+      if (this.playing && context.time + context.secondsPerBeat >= this.startTime + this.duration) {
         this.source.noteOff(context.startTime + this.startTime + this.duration);
         this.playing = false;
         this.source = null;
@@ -81,14 +79,6 @@ Clip.prototype = {
     this.updateElement();
   },
 
-  // play: function(context) {
-  //   if (context.time > this.startTime && context.time < this.startTime + this.duration) {
-  //     var offset = context.time - this.startTime;
-  //     this.source.noteGrainOn(context.startTime + this.startTime, this.offset + offset, this.duration - offset);
-  //     this.playing = true;
-  //   }
-  // },
-
   stop: function() {
     if (this.source) {
       this.source.noteOff(0);
@@ -101,7 +91,7 @@ Clip.prototype = {
     var context = this.canvas.get(0).getContext("2d"),
         width = (this.buffer.length / this.buffer.sampleRate) * this.application.pixelsPerSecond,
         wave = this.buffer.getChannelData(0),
-        height = 100,
+        height = 98,
         ymid = height / 2,
         xstep = Math.floor(this.buffer.sampleRate / this.application.pixelsPerSecond);
 
@@ -122,11 +112,15 @@ Clip.prototype = {
   },
 
   select: function() {
-    this.selected = this.selected ? false : true;    
-    var style = this.selected ? {'border' : '1px dashed red'} : {'border':'1px solid #EEE'};
-    this.element.css(style);
+    this.element.addClass('selected');
+    this.selected = true;
   },
   
+  deselect: function() {
+    this.element.removeClass('selected');
+    this.selected = false;
+  },
+
   onMouseLeave: function(event) {
   },
   
@@ -142,8 +136,13 @@ Clip.prototype = {
       pageX: event.pageX
     };
 
-    this.select();    
-    
+    if (this.selected) {
+      this.deselect();
+    }
+    else {
+      this.select();    
+    }
+
     $(document).bind('mousemove', this._onDrag);
     $(document).bind('mouseup', this._onDragEnd);
   },
@@ -191,7 +190,8 @@ Clip.prototype = {
       duration: this.duration,
       startTime: this.startTime,
       offset: this.offset,
-      buffer: this.buffer
+      buffer: this.buffer,
+      track: this.track
     }, options));
   }
 

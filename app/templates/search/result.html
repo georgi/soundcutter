@@ -1,5 +1,8 @@
-<ul>
-  {% _.each(tracks, function(track) { %}
-    <li><a href="{{ track.stream_url }}">{{ track.title }}</a></li>
-  {% }); %}
-</ul>
+{% _.each(tracks, function(track) { %}
+<div class="sound">
+  <a href="{{ track.stream_url }}">
+    <h6>{{ track.title }}</h6>
+    <img src="{{ track.waveform_url }}"/>
+  </a>
+</div>
+{% }); %}

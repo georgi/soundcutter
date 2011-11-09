@@ -21,7 +21,7 @@ Track.prototype = {
     var context = this.canvas.get(0).getContext("2d"),
         width = this.element.width(),
         height = this.element.height(),
-        xstep = width / this.application.totalSteps;
+        xstep = this.application.pixelsPerBeat;
     
     this.canvas.attr('height', height);
     this.canvas.attr('width', width);
@@ -38,13 +38,11 @@ Track.prototype = {
     }
   },
 
-
   createClip: function(options) {
     var clip = new Clip(_.extend({ 
       context: this.context,
       application: this.application,
-      destination: this.output,
-      duration: this.application.secondsPerBeat
+      destination: this.output
     }, options));
 
     this.addClip(clip);
@@ -53,8 +51,10 @@ Track.prototype = {
   },
 
   addClip: function(clip) {
+    clip.track = this;
     this.clips.push(clip);
     this.element.append(clip.element);
+    clip.updateElement();
   }
 
 };
