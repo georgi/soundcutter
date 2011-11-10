@@ -16,6 +16,7 @@ var Application = {
     this.searchInput = $("#search-input");
     this.arrangement = $("#arrangement");
     this.sampleLink = $('#search a');
+    this.trackHeight = 100;
 
     this.setBpm(120);
     this.setPixelsPerSecond(50);
@@ -106,8 +107,7 @@ var Application = {
   },
 
   onClickSample: function(event) {
-    var link = event.target;
-
+    var link = event.currentTarget;
     event.preventDefault();
     
     $.ajax({
@@ -118,7 +118,7 @@ var Application = {
       success: _.bind(function(url) {
         this.loadBuffer(url.replace("http://ak-media.soundcloud.com/", "/mp3/"), _.bind(function(arrayBuffer) {
           this.context.decodeAudioData(arrayBuffer, _.bind(function(buffer) {
-            var track = this.createTrack({ name: $(link).html() });
+            var track = this.createTrack({ name: link.title });
             track.createClip({ buffer: buffer });    
           }, this));
         }, this));

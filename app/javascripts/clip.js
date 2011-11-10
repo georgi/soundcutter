@@ -91,7 +91,7 @@ Clip.prototype = {
     var context = this.canvas.get(0).getContext("2d"),
         width = (this.buffer.length / this.buffer.sampleRate) * this.application.pixelsPerSecond,
         wave = this.buffer.getChannelData(0),
-        height = 98,
+        height = this.application.trackHeight,
         ymid = height / 2,
         xstep = Math.floor(this.buffer.sampleRate / this.application.pixelsPerSecond);
 

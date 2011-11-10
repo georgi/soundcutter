@@ -6,11 +6,16 @@ var Track = function(options) {
   this.output = this.context.createGainNode();
   this.output.connect(this.context.destination);
 
-  this.element = $('<div id="'+options.name+'" class="track"></div>');
+  this.element = $('<div class="track"></div>');
   this.canvas = $('<canvas class="canvas"></canvas>');
-  
+  this.title = $('<div class="title"></div>');
+
+  this.title.html(this.name);
+
   $('#arrangement').append(this.element);
-  
+
+  this.element.height(this.application.trackHeight + 20);
+  this.element.append(this.title);
   this.element.append(this.canvas);
   this.draw();
 };
@@ -20,7 +25,7 @@ Track.prototype = {
   draw: function() {
     var context = this.canvas.get(0).getContext("2d"),
         width = this.element.width(),
-        height = this.element.height(),
+        height = this.application.trackHeight,
         xstep = this.application.pixelsPerBeat;
     
     this.canvas.attr('height', height);

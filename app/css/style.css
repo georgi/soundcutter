@@ -12,9 +12,6 @@
     position: relative;
     width: 100%;
     overflow: scroll;
-    border-top: 1px solid #ccc;
-    border-left: 1px solid #ccc;
-    border-right: 1px solid #ccc;
 }
 
 #search
@@ -54,10 +51,17 @@
 
 .track
 {
-    border-bottom: 1px solid #ccc;
     position: relative;
-    height: 100px;
     width: 100%;
+    margin-bottom: 10px;
+}
+
+.track .title
+{
+    font-size: 10px;
+    padding: 2px 5px;
+    color: #fff;
+    background: #aaa;
 }
 
 .track canvas
