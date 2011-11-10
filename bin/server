@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-// extend require path
 require.paths.unshift(__dirname + '/..');
+process.chdir(__dirname + '/..');
 
 var fs        = require('fs');
 var connect   = require('connect');
@@ -31,13 +31,16 @@ while (argv.length > 0) {
     httpConf.host = argv.shift(); 
     break;
 
+  case "-P":
+    fs.writeFile(argv.shift(), process.pid.toString());
+    break;
+
   default:
-    console.log("usage: ./bin/server [-p PORT] [-h HOST]");
+    console.log("usage: ./bin/server [-p PORT] [-h HOST] [-P PIDFIlE]");
     process.exit(1);
   }
 }
 
-fs.writeFile(__dirname + '/../tmp/server.pid', process.pid.toString());
 
 // bindings
 httpServer
