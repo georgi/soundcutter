@@ -3,7 +3,6 @@
 // extend require path
 require.paths.unshift(__dirname + '/..');
 
-// imports
 var fs        = require('fs');
 var connect   = require('connect');
 var paperboy  = require('paperboy');
@@ -11,16 +10,32 @@ var paperboy  = require('paperboy');
 var proxy     = require('mountable-proxy');
 var http      = require('http');
 
-// configuration
 var conf     = require('config/base');
 var routes   = conf.routes;
 var fileConf = conf.file;
 var httpConf = conf.http;
-var package  = JSON.parse(fs.readFileSync('package.json'));
 
 var httpServer    = connect.createServer();
 var apiProxy      = proxy.createProxy(conf.apiProxy);
 var mp3Proxy      = proxy.createProxy(conf.mp3Proxy);
+
+var argv = process.argv.slice(2);
+
+while (argv.length > 0) {
+  switch (argv.shift()) {
+  case "-p": 
+    httpConf.port = argv.shift(); 
+    break;
+
+  case "-h": 
+    httpConf.host = argv.shift(); 
+    break;
+
+  default:
+    console.log("usage: ./bin/server [-p PORT] [-h HOST]");
+    process.exit(1);
+  }
+}
 
 // bindings
 httpServer
