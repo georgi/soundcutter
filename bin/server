@@ -37,6 +37,8 @@ while (argv.length > 0) {
   }
 }
 
+fs.writeFile(__dirname + '/../tmp/server.pid', process.pid.toString());
+
 // bindings
 httpServer
   .use(connect.logger({
