@@ -1,12 +1,12 @@
 {
     "author": "Matthias Georgi",
-    "name": "ausdionerd",
+    "name": "soundcutter",
     "description": "digital audio workstation",
-    "version": "0.0.0",
-    "homepage": "http://audionerd.info",
+    "version": "0.0.1",
+    "homepage": "http://soundcutter.org",
     "repository": {
         "type": "git",
-        "url": "git://github.com/georgi/audionerd.git"
+        "url": "git://github.com/georgi/soundcutter.git"
     },
     "scripts": {
         "test": "vows --spec"
