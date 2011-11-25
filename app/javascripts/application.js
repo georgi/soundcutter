@@ -16,13 +16,21 @@ var Application = {
     this.searchInput = $("#search-input");
     this.arrangement = $("#arrangement");
     this.sampleLink = $('#search a');
+    this.playButton = $('#play');
     this.trackHeight = 100;
-
+    this.beatCount = 4;
+    this.stepsPerBeat = 4;
     this.setBpm(120);
-    this.setPixelsPerSecond(50);
-    
+    this.setPixelsPerBeat(Math.floor(this.arrangement.width() / this.beatCount));
+    this.loopLength = this.secondsPerBeat * this.beatCount;
+     
     $(document).keydown(_.bind(this.onKeyDown, this));
     
+    $('#rewind').click(_.bind(this.rewind, this));
+    $('#forward').click(_.bind(this.forward, this));
+    $('#copy').click(_.bind(this.copyClips, this));
+    $('#paste').click(_.bind(this.pasteClips, this));
+    this.playButton.click(_.bind(this.togglePlay, this));
     this.searchInput.keydown(_.bind(this.onEnterSearch, this));
     this.arrangement.click(_.bind(this.onClickArrangement, this));
     this.sampleLink.live('click', _.bind(this.onClickSample, this));
@@ -34,23 +42,29 @@ var Application = {
     };
 
     this.loadTracks();
-    this.scheduleAudio();
+    this.schedule();
   },
   
-  scheduleAudio: function() {
-    setInterval(_.bind(this.updateAudio, this), this.secondsPerBeat * 1000);
-    setInterval(_.bind(this.updatePosition, this), 10);
+  schedule: function() {
     setInterval(_.bind(this.updateTime, this), 10);
   },
   
   setBpm: function(bpm) {
     this.bpm = bpm;
     this.secondsPerBeat = 60 / this.bpm;
+    this.secondsPerStep = this.secondsPerBeat / this.stepsPerBeat;
   },
 
+  setPixelsPerBeat: function(value) {
+    this.pixelsPerBeat = value;
+    this.pixelsPerSecond = this.pixelsPerBeat / this.secondsPerBeat;
+    this.pixelsPerStep = this.pixelsPerBeat / this.stepsPerBeat;
+  },
+  
   setPixelsPerSecond: function(value) {
     this.pixelsPerSecond = value;
     this.pixelsPerBeat = this.secondsPerBeat * this.pixelsPerSecond;
+    this.pixelsPerStep = this.pixelsPerBeat / this.stepsPerBeat;
   },
   
   visibleRangeInSeconds: function() {
@@ -110,6 +124,10 @@ var Application = {
     var link = event.currentTarget;
     event.preventDefault();
     
+    var track = this.createTrack({ name: link.title, startTime: this.time });    
+    // var clip = track.createClip({ duration: parseInt($(link).attr('data-duration')) / 1000 });    
+    var clip = track.createClip({ duration: 1  });    
+    
     $.ajax({
       url: link.href.replace("http://api.soundcloud.com/", "/_api/"),
       data: {
@@ -118,8 +136,8 @@ var Application = {
       success: _.bind(function(url) {
         this.loadBuffer(url.replace("http://ak-media.soundcloud.com/", "/mp3/"), _.bind(function(arrayBuffer) {
           this.context.decodeAudioData(arrayBuffer, _.bind(function(buffer) {
-            var track = this.createTrack({ name: link.title });
-            track.createClip({ buffer: buffer });    
+            clip.buffer = buffer;
+            clip.draw();
           }, this));
         }, this));
       }, this)
@@ -142,9 +160,32 @@ var Application = {
   },
 
   setTime: function(time) {
-    this.time = time;
+    this.time = Math.floor(time / this.secondsPerStep) * this.secondsPerStep;
     this.startTime = this.context.currentTime - this.time;
     this.updatePosition();
+  },
+
+  rewind: function() {
+    if (this.time > 0) {
+      this.setTime(this.time - this.secondsPerStep);
+    }
+  },
+  
+  forward: function() {
+    this.setTime(this.time + this.secondsPerStep);
+  },
+
+  togglePlay: function() {
+    if (this.running) {
+      this.running = false;
+      this.stopClips();
+      this.playButton.html('&#9654;');
+    }
+    else {
+      this.startTime = this.context.currentTime - this.time;
+      this.running = true;
+      this.playButton.html('&#9632;');
+     }
   },
   
   onKeyDown: function(event) {
@@ -153,26 +194,17 @@ var Application = {
     switch (event.keyCode) {
     case 37: // cursor left
       event.preventDefault();
-      if (this.time > 0) {
-        this.setTime(this.time - this.secondsPerBeat);
-      }
+      this.rewind();
       break;
       
     case 39: // cursor right
       event.preventDefault();
-      this.setTime(this.time + this.secondsPerBeat);
+      this.forward();
       break;
 
     case 32: // space
       event.preventDefault();
-      if (this.running) {
-        this.running = false;
-        this.stopClips();
-      }
-      else {
-        this.startTime = this.context.currentTime - this.time;
-        this.running = true;
-      }
+      this.togglePlay();
       break;
 
     case 67: // c
@@ -192,27 +224,28 @@ var Application = {
       break;
     }
   },
-
-  updateAudio: function() {
-    if (this.running) {
-      this.updatePosition();
-      this.eachClip(function(clip) {
-        clip.updateAudio(this);
-      }, this);
-    }
-  },
-  
-  updateTime: function() {
-    if (this.running) {
-      this.time = this.context.currentTime - this.startTime;
-    }
-  },
   
   updatePosition: function() {
     this.playPosition.css({
       height: this.arrangement.height(),
       left: this.time * this.pixelsPerSecond
-    });
+    });     
+  },
+  
+  updateTime: function() {
+    if (this.running) {
+      this.time = this.context.currentTime - this.startTime;
+      
+      this.updatePosition();
+      
+      if (this.time + 0.01 > this.loopLength) {
+        this.setTime(this.time - this.loopLength);
+      }
+      
+      this.eachClip(function(clip) {
+        clip.updateAudio(this);
+      }, this);
+    }
   },
 
   updateGraphics: function() {

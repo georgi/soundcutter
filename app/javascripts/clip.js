@@ -8,13 +8,17 @@ var Clip = function(options) {
   }, options);
   
   this.element = $('<div class="clip"></div>');
+  this.loading = $('<img class="loading" src="/loading.gif"/>');
   this.canvas = $('<canvas class="canvas"></canvas>');
   this.leftHandle = $('<div class="left-handle"></div>');
   this.rightHandle = $('<div class="right-handle"></div>');
   
+  this.element.append(this.loading);
   this.element.append(this.leftHandle);
   this.element.append(this.canvas);
   this.element.append(this.rightHandle);
+  this.canvas.hide();
+  this.element.height(this.application.trackHeight);
 
   this.updateElement();
 
@@ -40,10 +44,9 @@ Clip.prototype = {
 
   updateAudio: function(context) {
     if (this.buffer) {
-      if (!this.playing && 
-          context.time + context.secondsPerBeat >= this.startTime && 
-          context.time + context.secondsPerBeat < this.startTime + this.duration) {
-
+      var t = context.time + 0.05;
+ 
+      if (!this.playing && t >= this.startTime && t < this.startTime + this.duration) {
         this.source = this.context.createBufferSource();
         this.source.buffer = this.buffer;
         this.source.connect(this.destination);
@@ -60,7 +63,7 @@ Clip.prototype = {
         this.playing = true;
       }
 
-      if (this.playing && context.time + context.secondsPerBeat >= this.startTime + this.duration) {
+      if (this.playing && t >= this.startTime + this.duration) {
         this.source.noteOff(context.startTime + this.startTime + this.duration);
         this.playing = false;
         this.source = null;
@@ -94,6 +97,9 @@ Clip.prototype = {
         height = this.application.trackHeight,
         ymid = height / 2,
         xstep = Math.floor(this.buffer.sampleRate / this.application.pixelsPerSecond);
+
+    this.loading.remove();
+    this.canvas.show();
 
     this.canvas.attr('height', height);
     this.canvas.attr('width', width);
@@ -145,6 +151,8 @@ Clip.prototype = {
 
     $(document).bind('mousemove', this._onDrag);
     $(document).bind('mouseup', this._onDragEnd);
+    
+    event.preventDefault();
   },
 
   onDrag: function(event) {
@@ -169,17 +177,21 @@ Clip.prototype = {
     this.checkBounds();
     this.updateElement();
     this.element.trigger('drag', event);
+    event.preventDefault();
   },
 
   onDragEnd: function(event) {
     $(document).unbind('mousemove', this._onDrag);
     $(document).unbind('mouseup', this._onDragEnd);
+    event.preventDefault();
   },
 
   checkBounds: function() {
     this.startTime = Math.max(0, this.startTime);
     this.offset = Math.max(0, this.offset);
-    this.duration = Math.min(this.duration, this.buffer.duration);
+    if (this.buffer) {
+      this.duration = Math.min(this.duration, this.buffer.duration);
+    }
   },
   
   clone: function(options) {

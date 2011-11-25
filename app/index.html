@@ -11,10 +11,28 @@
     <link rel="stylesheet" href="css/ui-lightness/jquery-ui.css" type="text/css" media="screen" />
   </head>
   <body onload="Application.initialize()">
+    <h1><a href="https://github.com/georgi/soundcutter">soundcutter.org</a></h1>
+    <p>
+      Soundcutter is a multitrack audio editor using the Web Audio
+      API. This demo currently runs only in Google Chrome.
+    </p>
+    <p>
+      Click on a Sample to add it to the timeline. You can move and
+      resize a sample clip using your mouse.
+    </p>
+    <p>
+      Click on clips to select them and use Ctrl-c and Ctrl-v
+      to copy and paste clips at the desired position.
+    </p>
     <div id="application">
       <div id="search">
       </div>
       <div id="toolbar">
+        <button id="rewind">&lt;&lt;</button>
+        <button id="forward">&gt;&gt;</button>
+        <button id="play">&#9654;</button>
+        <button id="copy">Copy</button>
+        <button id="paste">Paste</button>
       </div>
       <div id="arrangement">
         <div id="play-position">

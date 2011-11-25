@@ -1,9 +1,29 @@
+h1 {
+    margin-bottom: 10px;
+}
+
+h1 a {
+    color: #333;
+    font-size: 13px;
+}
+
+p {
+    font-size: 11px;
+}
+
+#toolbar {
+    margin-bottom: 20px;
+}
+
+#toolbar button {
+    padding: 10px;
+}
 
 #play-position
 {
     position: absolute;
     width: 1px;
-    background: #777;
+    background: #300;
     z-index: 10;
 }
 
@@ -27,6 +47,7 @@
 {
     float: left;
     margin: 0 5px 5px 0;
+    height: 50px;
 }
 
 .sound a
@@ -40,13 +61,12 @@
 .sound h6
 {
     position: absolute;
-    top: 10px;
 }
 
 .sound img
 {
     background: #999;
-    height: 50px;
+    height: 25px;
 }
 
 .track
@@ -77,6 +97,11 @@
     overflow: hidden;
 }
 
+.clip .loading
+{
+    margin: 30px auto;
+}
+
 .clip.selected
 {
     border: 1px dashed red;
@@ -96,6 +121,7 @@
     position: absolute;
     opacity: 0.5;
     z-index: 10;
+    cursor: e-resize;
 }
 
 .clip:hover .left-handle
@@ -112,6 +138,7 @@
     position: absolute;
     opacity: 0.5;
     z-index: 10;
+    cursor: w-resize;
 }
 
 .clip:hover .right-handle

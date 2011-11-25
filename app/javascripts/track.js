@@ -26,7 +26,8 @@ Track.prototype = {
     var context = this.canvas.get(0).getContext("2d"),
         width = this.element.width(),
         height = this.application.trackHeight,
-        xstep = this.application.pixelsPerBeat;
+        xstep = this.application.pixelsPerStep,
+        beats = this.application.beatCount;
     
     this.canvas.attr('height', height);
     this.canvas.attr('width', width);
