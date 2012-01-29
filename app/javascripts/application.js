@@ -15,7 +15,7 @@ var Application = {
     this.playPosition = $('#play-position');
     this.searchInput = $("#search-input");
     this.arrangement = $("#arrangement");
-    this.sampleLink = $('#search a');
+    this.sampleLink = $('#browser a');
     this.playButton = $('#play');
     this.trackHeight = 100;
     this.beatCount = 4;
@@ -30,16 +30,13 @@ var Application = {
     $('#forward').click(_.bind(this.forward, this));
     $('#copy').click(_.bind(this.copyClips, this));
     $('#paste').click(_.bind(this.pasteClips, this));
+
     this.playButton.click(_.bind(this.togglePlay, this));
     this.searchInput.keydown(_.bind(this.onEnterSearch, this));
     this.arrangement.click(_.bind(this.onClickArrangement, this));
     this.sampleLink.live('click', _.bind(this.onClickSample, this));
 
-    this.loadTemplate("search/result");
-
-    this.renderContext = { 
-      render: _.bind(this.render, this)
-    };
+    $('#browser').height($(window).height() - 30);;
 
     this.loadTracks();
     this.schedule();
@@ -71,19 +68,27 @@ var Application = {
     return $('#arrangement').width() / this.pixelsPerSecond;
   },
 
-  render: function(name, context) {
-    return this.templates[name](_.extend(this.renderContext, context));
+  render: function(target, name, context) {
+    var template = this.templates[name];
+
+    if (template) {
+      $(target).html(template(context));
+    }
+    else {
+      this.loadTemplate(name, _.bind(this.render, this, target, name, context));
+    }
   },
 
-  loadTemplate: function(name) {
+  loadTemplate: function(name, callback) {
     $.ajax({
       url: "/templates/" + name + ".html",
-      success: _.bind(this.onLoadTemplate, this, name)
+      success: _.bind(this.onLoadTemplate, this, name, callback)
     });
   },
 
-  onLoadTemplate: function(name, data) {
+  onLoadTemplate: function(name, callback, data) {
     this.templates[name] = _.template(data);
+    callback();
   },
 
   onEnterSearch: function(event) {
@@ -95,18 +100,15 @@ var Application = {
   },
 
   loadTracks: function() {
-    $('#search').html('<img src="/loading.gif"/>');
+    $('#browser').html('<img src="/loading.gif"/>');
     $.ajax({
-      url: "/_api/users/user1239006/tracks.json",
-      data: {
-        client_id: this.clientId
-      },
+      url: "/tracks",
       success: _.bind(this.renderSearch, this)
     });
   },
 
   renderSearch: function(data) {
-    $('#search').html(this.render("search/result", { tracks: data }));
+    this.render('#browser', "search/track", { tracks: data });
   },
 
   searchTracks: function(q, callback) {
@@ -125,23 +127,14 @@ var Application = {
     event.preventDefault();
     
     var track = this.createTrack({ name: link.title, startTime: this.time });    
-    // var clip = track.createClip({ duration: parseInt($(link).attr('data-duration')) / 1000 });    
     var clip = track.createClip({ duration: 1  });    
     
-    $.ajax({
-      url: link.href.replace("http://api.soundcloud.com/", "/_api/"),
-      data: {
-        client_id: this.clientId
-      },
-      success: _.bind(function(url) {
-        this.loadBuffer(url.replace("http://ak-media.soundcloud.com/", "/mp3/"), _.bind(function(arrayBuffer) {
-          this.context.decodeAudioData(arrayBuffer, _.bind(function(buffer) {
-            clip.buffer = buffer;
-            clip.draw();
-          }, this));
-        }, this));
-      }, this)
-    });
+    this.loadBuffer(link.href, _.bind(function(arrayBuffer) {
+      this.context.decodeAudioData(arrayBuffer, _.bind(function(buffer) {
+        clip.buffer = buffer;
+        clip.draw();
+      }, this));
+    }, this));
   },
   
   onClickArrangement: function(event) {    

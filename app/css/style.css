@@ -1,5 +1,7 @@
 h1 {
-    margin-bottom: 10px;
+    margin: 10px 0px;
+    padding: 0;
+    line-height: 13px;
 }
 
 h1 a {
@@ -30,43 +32,39 @@ p {
 #arrangement
 {
     position: relative;
-    width: 100%;
+    width: 80%;
     overflow: scroll;
 }
 
-#search
+#info
 {
-    border: 1px solid #ccc;
-    padding: 10px;
-    margin: 10px 0px;
-    height: 100px;
-    overflow: scroll;
+    display: none;
 }
 
-.sound
+#browser
 {
     float: left;
-    margin: 0 5px 5px 0;
-    height: 50px;
+    border-right: 1px solid #ccc;
+    overflow: scroll;
+    width: 20%;
 }
 
-.sound a
+.sound-list
 {
+    margin: 0px;
+    padding: 0px;
+}
+
+.sound-list li
+{
+    list-style-type: none;
+}
+
+.sound-list a
+{
+    font-size: 12px;
     display: block;
-    position: relative;
     color: #444;
-    text-decoration: none;
-}
-
-.sound h6
-{
-    position: absolute;
-}
-
-.sound img
-{
-    background: #999;
-    height: 25px;
 }
 
 .track

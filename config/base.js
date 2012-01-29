@@ -26,7 +26,7 @@ exports.mp3Proxy = config('proxy', {
 
 exports.routes = config('routes', {
   api: /^\/_api/,
-  mp3: /^\/mp3/,
+  tracks: /^\/tracks/,
   home: /^\/$/,
   static: /\.(?:js|gif|png|json|css|ico|html|manifest|mp3|ttf|swf|wav)(?:\?.*)?$/,
   wildcard: /.*/

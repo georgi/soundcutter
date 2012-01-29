@@ -17,7 +17,6 @@ var httpConf = conf.http;
 
 var httpServer    = connect.createServer();
 var apiProxy      = proxy.createProxy(conf.apiProxy);
-var mp3Proxy      = proxy.createProxy(conf.mp3Proxy);
 
 var argv = process.argv.slice(2);
 
@@ -61,6 +60,7 @@ function serveHTTP(app) {
 
       proxyRequest.on('response', function(proxyResponse) {
         var location = apiProxy.getLocation(proxyRequest, proxyResponse);
+        // TODO stream mp3
         response.end(location);
       });
 
@@ -71,8 +71,17 @@ function serveHTTP(app) {
     }
   });
 
-  app.all(routes.mp3, function(request, response, next) {
-    mp3Proxy.http(request, response);
+  app.all(routes.tracks, function(request, response, next) {
+    var track = request.url.split('/')[2];
+
+    if (track) {
+      fs.createReadStream('./tracks/' + track).pipe(response);
+    } else {
+      var tracks = fs.readdirSync('./tracks');
+      tracks = tracks.filter(function(f) { return f.match(/\.(wav|mp3)$/); });
+      response.setHeader('Content-Type', 'application/json');
+      response.end(JSON.stringify(tracks));
+    }
   });
 
   app.get(routes.wildcard, function(request, response, next) {
