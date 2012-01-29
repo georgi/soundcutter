@@ -8,6 +8,8 @@ Install node.js and npm.
 
 Run npm install.
 
+Create a folder named tracks that contains wav files.
+
 # Run
 
 Run ./bin/server
